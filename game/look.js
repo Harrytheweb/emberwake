@@ -221,10 +221,10 @@ export function makeRidgeMesh(width, depth, segW, segD, height, color, yFn, { li
     const nx = x / width, nz = z / depth;
     const h = yFn(nx, nz, height);
     pos.setZ(i, h);
-    const t = THREE.MathUtils.clamp(h / height, 0, 1);
+    const t = THREE.MathUtils.clamp(h / Math.max(0.001, height), 0, 1);
     const cc = c.clone()
-      .lerp(shade, 0.42 * (1 - t) + Math.max(0, nz) * 0.18)
-      .lerp(cool, t * 0.22);
+      .lerp(shade, 0.38 * (1 - t) + Math.max(0, nz) * 0.16)
+      .lerp(cool, t * 0.18);
     col[i * 3] = cc.r; col[i * 3 + 1] = cc.g; col[i * 3 + 2] = cc.b;
   }
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3));

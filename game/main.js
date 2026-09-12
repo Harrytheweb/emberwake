@@ -292,19 +292,18 @@ async function boot() {
 
   const ridges = new THREE.Group();
   const ridgeFn = (freq, seed) => (nx, nz, height) => {
-    const swell = 0.55 + 0.45 * Math.sin((nx * freq + seed) * Math.PI);
-    const roll = fbm(nx * 4.5 + seed, nz * 3.2, 4);
-    const jag = swell * 0.62 + roll * 0.5;
-    const envelope = Math.pow(Math.max(0, 1 - Math.abs(nx) * 1.05), 1.05);
-    const depth = 0.32 + (0.45 - nz) * 0.7;
-    return Math.max(0, jag * envelope * depth * height);
+    const major = Math.pow(Math.max(0, Math.sin((nx * freq + seed) * Math.PI)), 1.35);
+    const minor = Math.pow(Math.max(0, Math.sin((nx * (freq * 1.7) + seed * 2.2) * Math.PI)), 2.1) * 0.28;
+    const envelope = Math.pow(Math.max(0, 1 - Math.abs(nx) * 1.12), 0.8);
+    const spine = Math.pow(Math.max(0, 1 - Math.abs(nz) * 1.85), 1.6);
+    return Math.max(0, (major * 0.78 + minor) * envelope * spine * height);
   };
-  const rNear = makeRidgeMesh(820, 150, 136, 26, 96, 0x243038, ridgeFn(5.4, 0.2));
-  rNear.position.set(8, 4, -188);
-  const rMid = makeRidgeMesh(940, 170, 122, 24, 128, 0x2C4058, ridgeFn(6.0, 1.1), { lit: false });
-  rMid.position.set(-18, 22, -300);
-  const rFar = makeRidgeMesh(1120, 200, 110, 22, 168, 0x3A5478, ridgeFn(6.6, 2.4), { lit: false });
-  rFar.position.set(22, 42, -440);
+  const rNear = makeRidgeMesh(880, 90, 160, 14, 72, 0x243038, ridgeFn(3.2, 0.15));
+  rNear.position.set(6, 2, -210);
+  const rMid = makeRidgeMesh(980, 100, 150, 12, 96, 0x2C4058, ridgeFn(2.8, 1.05), { lit: false });
+  rMid.position.set(-20, 16, -305);
+  const rFar = makeRidgeMesh(1160, 110, 140, 10, 118, 0x3A5478, ridgeFn(2.4, 2.1), { lit: false });
+  rFar.position.set(24, 28, -420);
   ridges.add(rNear, rMid, rFar);
   for (let i = -2; i <= 2; i++) {
     const p = peakProto.clone(true);
@@ -526,8 +525,8 @@ function updateCamera() {
   const fx = Math.sin(STATE.yaw), fz = Math.cos(STATE.yaw);
   const rx = Math.sin(STATE.yaw + Math.PI / 2), rz = Math.cos(STATE.yaw + Math.PI / 2);
   const side = STATE.mounted ? (zoom ? (phone ? 0.7 : 1.0) : cam.side) : 0.2;
-  const lookFwd = phone ? 11 : 20;
-  const lookY = phone ? 2.15 : 3.6;
+  const lookFwd = phone ? 12 : 16;
+  const lookY = phone ? 1.85 : 2.55;
   camera.position.set(
     origin.x - fx * back + rx * side,
     origin.y + height + 0.28 - STATE.pitch * 1.2,
