@@ -1,16 +1,21 @@
-// dune_rise — arm B: lathe sand mound
+// cloud_puff — arm A: flattened white masses
 export default function (THREE) {
   const g = new THREE.Group();
-  const SAND = new THREE.MeshStandardMaterial({ color: 0xD2B48C, roughness: 0.94, metalness: 0 });
-  SAND.name = 'ground';
-  const PALE = new THREE.MeshStandardMaterial({ color: 0xC4A574, roughness: 0.9, metalness: 0 });
-  PALE.name = 'ground';
-  const pts = [[0, 0], [2.4, 0.02], [3.2, 0.35], [2.6, 0.7], [1.4, 0.95], [0.0, 1.05]].map(([x, y]) => new THREE.Vector2(x, y));
-  g.add(new THREE.Mesh(new THREE.LatheGeometry(pts, 12), SAND));
-  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 5), PALE);
-  cap.position.y = 0.85;
-  cap.scale.set(1.3, 0.35, 1);
-  g.add(cap);
+  const C = new THREE.MeshStandardMaterial({
+    color: 0xF4F7FA, roughness: 1, metalness: 0, emissive: 0xDDE6F0, emissiveIntensity: 0.18,
+  });
+  C.name = 'plaster';
+  const add = (x, y, z, sx, sy, sz) => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), C);
+    m.position.set(x, y, z);
+    m.scale.set(sx, sy, sz);
+    g.add(m);
+  };
+  add(0, 0.8, 0, 3.2, 0.85, 2.1);
+  add(1.8, 0.95, 0.3, 2.2, 0.7, 1.6);
+  add(-1.6, 0.75, -0.2, 2.0, 0.65, 1.5);
+  add(0.4, 1.35, -0.4, 1.6, 0.55, 1.2);
+  add(-0.5, 0.55, 0.6, 1.8, 0.5, 1.3);
   const box = new THREE.Box3(), v = new THREE.Vector3(), m = new THREE.Matrix4(), im = new THREE.Matrix4();
   g.updateMatrixWorld(true);
   g.traverse((n) => {

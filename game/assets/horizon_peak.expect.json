@@ -1,1 +1,6 @@
-{ "height": 28, "width": 28, "depth": 22, "tolerance": 0.4 }
+{
+  "height": 30,
+  "width": 76,
+  "depth": 39,
+  "tolerance": 0.45
+}

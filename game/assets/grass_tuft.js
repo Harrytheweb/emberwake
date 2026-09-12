@@ -2,11 +2,11 @@
 // 0.42 m
 export default function (THREE) {
   const g = new THREE.Group();
-  const A = new THREE.MeshStandardMaterial({ color: 0x7EC850, roughness: 0.86, metalness: 0, side: THREE.DoubleSide });
+  const A = new THREE.MeshStandardMaterial({ color: 0x3EC12A, roughness: 0.86, metalness: 0, side: THREE.DoubleSide });
   A.name = 'foliage';
-  const B = new THREE.MeshStandardMaterial({ color: 0x2D5A27, roughness: 0.9, metalness: 0, side: THREE.DoubleSide });
+  const B = new THREE.MeshStandardMaterial({ color: 0x1F7A28, roughness: 0.9, metalness: 0, side: THREE.DoubleSide });
   B.name = 'foliage';
-  const C = new THREE.MeshStandardMaterial({ color: 0xC2B280, roughness: 0.84, metalness: 0, side: THREE.DoubleSide });
+  const C = new THREE.MeshStandardMaterial({ color: 0x2F6B2A, roughness: 0.84, metalness: 0, side: THREE.DoubleSide });
   C.name = 'ground';
   const blade = (h, w, mat) => {
     const sh = new THREE.Shape();

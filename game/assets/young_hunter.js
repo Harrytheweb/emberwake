@@ -7,11 +7,11 @@ export default function (THREE) {
     if (name) m.name = name;
     return m;
   };
-  const CLOTH = mat(0xC2B280, 'fabric', { roughness: 0.84 });
-  const LEATH = mat(0x4A3728, 'fabric', { roughness: 0.7 });
-  const PLATE = mat(0xD4D4D4, 'metal', { roughness: 0.55, metalness: 0.22 });
-  const SKIN = mat(0xE8A87C, 'fabric', { roughness: 0.62 });
-  const HAIR = mat(0x4A3728, 'fabric', { roughness: 0.9 });
+  const CLOTH = mat(0xE8E4DC, 'fabric', { roughness: 0.84 });
+  const LEATH = mat(0x2C2C2E, 'fabric', { roughness: 0.78 });
+  const PLATE = mat(0xE8E4DC, 'fabric', { roughness: 0.8 });
+  const SKIN = mat(0xC4A07A, 'fabric', { roughness: 0.62 });
+  const HAIR = mat(0x1A120E, 'fabric', { roughness: 0.9 });
 
   const add = (parent, geo, m, x, y, z, rx = 0, ry = 0, rz = 0) => {
     const mesh = new THREE.Mesh(geo, m);
@@ -36,9 +36,10 @@ export default function (THREE) {
   const head = new THREE.Group();
   head.position.set(0, 0.50, 0);
   spine.add(head);
-  add(head, new THREE.SphereGeometry(0.11, 8, 6), SKIN, 0, 0.10, 0.02);
-  add(head, new THREE.SphereGeometry(0.115, 8, 6), HAIR, 0, 0.14, -0.01);
-  add(head, new THREE.BoxGeometry(0.16, 0.04, 0.12), HAIR, 0, 0.16, 0.02);
+  add(head, new THREE.SphereGeometry(0.10, 8, 6), SKIN, 0, 0.09, 0.02);
+  add(head, new THREE.SphereGeometry(0.105, 8, 6), HAIR, 0, 0.13, -0.01);
+  add(head, new THREE.CylinderGeometry(0.11, 0.11, 0.05, 8), CLOTH, 0, 0.18, 0.0);
+  add(head, new THREE.CylinderGeometry(0.15, 0.15, 0.018, 8), CLOTH, 0, 0.155, 0.03);
 
   const arm = (side) => {
     const j = new THREE.Group();
@@ -57,7 +58,7 @@ export default function (THREE) {
     j.position.set(side * 0.09, 0.88, 0);
     g.add(j);
     add(j, new THREE.CylinderGeometry(0.055, 0.06, 0.42, 6), LEATH, 0, -0.22, 0);
-    add(j, new THREE.CylinderGeometry(0.045, 0.05, 0.36, 6), CLOTH, 0, -0.56, 0);
+    add(j, new THREE.CylinderGeometry(0.045, 0.05, 0.36, 6), LEATH, 0, -0.56, 0);
     add(j, new THREE.BoxGeometry(0.09, 0.07, 0.16), LEATH, 0, -0.76, 0.03);
     return j;
   };

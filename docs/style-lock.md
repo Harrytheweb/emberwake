@@ -1,29 +1,34 @@
 # First Light Hunt — the locked style
 
-> Soft pastoral realism: objects are built from living timber, worn leather, dry thatch and field stone, finished matte with warm dawn dust, treated as if they have stood in gold light that is already giving way to cool morning blue.
+> Hard-sun pastoral realism: living timber, dark hide and worn leather under a bright temperate sky, finished matte with saturated meadow green and blue-grey stone, treated as noon-leaning morning — electric grass, long hard shadows, no peach haze, no cartoon chalk.
 
 | role | hex | where it belongs |
 |---|---|---|
-| gold-light | `0xF0C27B` | sun side of thatch, dry grass tips, hide highlights |
-| warm-sand | `0xE8A87C` | dunes, beach, skin, clay daub |
-| meadow | `0x7EC850` | grass tops, new leaves |
-| deep-leaf | `0x2D5A27` | foliage mass, hedge shade, pine |
-| khaki | `0xC2B280` | paths, hide, unbleached cloth, dune grass |
-| morning-blue | `0x87CEEB` | sky-facing cool planes, distant haze, water sheen |
-| bark | `0x4A3728` | trunks, leather straps, hooves, dark fur |
-| pale-stone | `0xD4D4D4` | cottage limewash, fence lime, bone, horn |
+| meadow-hot | `0x3EC12A` | sunlit grass, near field |
+| meadow-deep | `0x1F7A28` | grass in shade, hollows |
+| leaf | `0x2F6B2A` | tree mass, hedge |
+| hide-dark | `0x1A120E` | horse body, dark fur |
+| hide-rim | `0x3A2A22` | horse muzzle, joints, mane light |
+| leather | `0x4A3728` | saddle, straps, boots |
+| cloth-light | `0xE8E4DC` | rider shirt, unbleached cloth |
+| cloth-dark | `0x2C2C2E` | rider trousers, cap |
+| ridge-near | `0x6A7A78` | nearest mountain faces |
+| ridge-far | `0x8FA3B8` | distant ridges, cool stone |
+| sky | `0x4AA3E6` | sky-facing cool fill, water |
+| sand | `0xD2B48C` | beach, dune |
 
 ## Fixed decisions
-- Metres. The riding horse is 1.62 m at the withers (about 2.05 m to ear tips). The young hunter is 1.68 m. A meadow oak is 9.4 m. A cottage is 4.8 m to the ridge. A fence bay is 2.4 m long and 1.15 m high. A shop stall is 2.2 m wide and 2.0 m high. A bush is 1.1 m. A grass tuft is 0.42 m. Horizon peaks are authored at 28 m and placed far away.
-- Animals, standing, at the shoulder or crown: rabbit 0.22 m, hare 0.32 m, squirrel 0.18 m, pigeon 0.20 m, pheasant 0.38 m, mallard 0.28 m, goose 0.55 m, fox 0.45 m, badger 0.32 m, roe doe 0.85 m, heron 0.95 m, wild sheep 0.85 m, mountain goat 0.90 m, red stag 1.35 m, wild boar 0.85 m, wolf 0.80 m, lynx 0.60 m, brown bear 1.20 m, elk 1.60 m, aurochs 1.70 m.
+- Metres. The riding horse is 1.62 m at the withers (about 2.0 m to ear tips). The young hunter is 1.68 m. A meadow oak is 8.6 m. A cottage is 4.8 m to the ridge. A fence bay is 2.4 m long and 1.15 m high. A shop stall is 2.2 m wide and 2.0 m high. A bush is 1.05 m. A grass tuft is 0.42 m. A range ridge is 22 m tall and about 70 m along.
+- Animals keep the previous standing heights.
 - Base at y = 0, centred on x and z, front faces +Z.
 - Flat colours with sensible roughness; surfaces are applied at load time.
-- Material names from the contract's list, not a shortened one: plaster | stone | timber | tile | metal | fabric | foliage | ground.
-- No logos, no glyphs, no lettering on any prop. Readable silhouettes do the naming.
-- Two temperatures in every frame: warm gold key, cool morning-blue fill. Meadow ground must take the key.
+- Material names from the contract's list: plaster | stone | timber | tile | metal | fabric | foliage | ground.
+- No logos, no glyphs, no branded stripes. No photo mapped from a stock rider.
+- Two temperatures: hard warm key, cool blue fill. Shade is darker and cooler. Meadow takes the key.
+- The opening frame sells scale: open grass, a dark horse, layered blue ridges, a bright sky.
 
 ## Claims a critic may fail
-- Shade is cooler (blue) than sun, not merely darker.
-- The horse reads as the hero: scale, gloss on hide, silhouette against the meadow.
-- Near-camera volume is occupied (grass, fence, bush), not a bald green disk.
-- Gallop frames stay readable: horizon level, ground lit, animal or landmark in depth.
+- Meadow reads saturated green, not mint pastel or khaki dust.
+- Mountains are blue-grey ridges with depth, not pale peach cones.
+- The horse is a dark readable silhouette, not a brown ball.
+- Long ground shadows exist; the sun is a direction, not an ambient wash.

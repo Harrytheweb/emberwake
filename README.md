@@ -6,7 +6,7 @@ Play: **https://harrytheweb.github.io/emberwake/game/**
 
 ## Concept
 
-Golden hour sliding into morning blue. Meadows, oaks, fences, a village stall, dunes and a shore, mountains on the far line. You are a young hunter with one horse. Points from hide, fur, feathers and meat unlock a quieter creep and a faster horse. Meat and fur buy a harder bow and a fuller quiver at the stall. The win is one of each of the twenty.
+Hard-sun pastoral: electric meadows, blue-grey ridges, a dark horse. Oaks and a village stall sit off the look corridor; dunes and a shore are east. You are a young hunter with one horse. Points from hide, fur, feathers and meat unlock a quieter creep and a faster horse. Meat and fur buy a harder bow and a fuller quiver at the stall. The win is one of each of the twenty.
 
 ## Controls
 

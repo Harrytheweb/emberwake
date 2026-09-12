@@ -1,33 +1,35 @@
-// meadow_oak — arm A: trunk cylinders + clumped foliage spheres
-// 9.4 m, front +Z
+// meadow_oak — arm C: forked timber + wide broken canopy, not a lollipop
 export default function (THREE) {
   const g = new THREE.Group();
-  const BARK = new THREE.MeshStandardMaterial({ color: 0x4A3728, roughness: 0.92, metalness: 0.0 });
+  const BARK = new THREE.MeshStandardMaterial({ color: 0x3A2A22, roughness: 0.93, metalness: 0 });
   BARK.name = 'timber';
-  const LEAF = new THREE.MeshStandardMaterial({ color: 0x2D5A27, roughness: 0.88, metalness: 0.0 });
+  const LEAF = new THREE.MeshStandardMaterial({ color: 0x2A5E26, roughness: 0.88, metalness: 0 });
   LEAF.name = 'foliage';
-  const SUN = new THREE.MeshStandardMaterial({ color: 0x7EC850, roughness: 0.82, metalness: 0.0 });
+  const SUN = new THREE.MeshStandardMaterial({ color: 0x3A9A2E, roughness: 0.84, metalness: 0 });
   SUN.name = 'foliage';
-  const add = (geo, m, x, y, z, sx = 1, sy = 1, sz = 1) => {
+  const SHADE = new THREE.MeshStandardMaterial({ color: 0x1A5A22, roughness: 0.9, metalness: 0 });
+  SHADE.name = 'foliage';
+  const add = (geo, m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, rz = 0) => {
     const mesh = new THREE.Mesh(geo, m);
     mesh.position.set(x, y, z);
     mesh.scale.set(sx, sy, sz);
+    mesh.rotation.set(rx, 0, rz);
     g.add(mesh);
     return mesh;
   };
-  add(new THREE.CylinderGeometry(0.42, 0.62, 1.2, 8), BARK, 0, 0.6, 0);
-  add(new THREE.CylinderGeometry(0.28, 0.40, 3.4, 8), BARK, 0.04, 2.7, -0.04);
-  add(new THREE.CylinderGeometry(0.12, 0.18, 1.6, 6), BARK, 0.55, 4.6, 0.2, 1, 1, 1).rotation.z = -0.55;
-  add(new THREE.CylinderGeometry(0.11, 0.16, 1.4, 6), BARK, -0.5, 4.8, -0.15).rotation.z = 0.6;
-  add(new THREE.CylinderGeometry(0.10, 0.14, 1.2, 6), BARK, 0.1, 5.1, 0.55).rotation.x = 0.55;
-  add(new THREE.SphereGeometry(1.55, 9, 7), LEAF, 0.15, 6.6, 0.1);
-  add(new THREE.SphereGeometry(1.15, 8, 6), SUN, 1.15, 6.2, 0.45);
-  add(new THREE.SphereGeometry(1.05, 8, 6), LEAF, -1.05, 6.4, -0.2);
-  add(new THREE.SphereGeometry(0.95, 8, 6), SUN, 0.2, 7.6, -0.55);
-  add(new THREE.SphereGeometry(0.85, 8, 6), LEAF, -0.35, 7.3, 0.85);
-  add(new THREE.SphereGeometry(0.7, 7, 5), SUN, 0.85, 7.1, 0.9);
-  add(new THREE.SphereGeometry(1.1, 8, 6), LEAF, 0.4, 6.3, 1.15);
-  add(new THREE.SphereGeometry(1.0, 8, 6), SUN, -0.2, 6.1, -1.2);
+  add(new THREE.CylinderGeometry(0.42, 0.62, 1.35, 8), BARK, 0, 0.67, 0);
+  add(new THREE.CylinderGeometry(0.22, 0.38, 2.6, 8), BARK, 0.08, 2.4, -0.06);
+  add(new THREE.CylinderGeometry(0.13, 0.20, 2.4, 6), BARK, 1.15, 3.7, 0.25, 1, 1, 1, 0.15, -1.05);
+  add(new THREE.CylinderGeometry(0.12, 0.18, 2.2, 6), BARK, -1.05, 3.75, -0.35, 1, 1, 1, -0.1, 1.0);
+  add(new THREE.CylinderGeometry(0.11, 0.16, 1.9, 6), BARK, 0.2, 4.15, 1.05, 1, 1, 1, 0.85, 0.1);
+  add(new THREE.CylinderGeometry(0.10, 0.14, 1.6, 6), BARK, -0.15, 4.2, -0.95, 1, 1, 1, -0.7, -0.15);
+  add(new THREE.SphereGeometry(1.55, 8, 6), LEAF, 0.15, 5.15, 0.1, 1.55, 0.55, 1.35);
+  add(new THREE.SphereGeometry(1.15, 7, 5), SUN, 1.7, 4.85, 0.45, 1.25, 0.48, 1.1);
+  add(new THREE.SphereGeometry(1.1, 7, 5), SHADE, -1.55, 4.9, -0.4, 1.2, 0.46, 1.05);
+  add(new THREE.SphereGeometry(0.95, 7, 5), LEAF, 0.25, 5.85, -0.85, 1.1, 0.42, 0.95);
+  add(new THREE.SphereGeometry(0.85, 6, 5), SUN, -0.35, 5.7, 1.05, 1.05, 0.4, 0.9);
+  add(new THREE.SphereGeometry(0.9, 6, 5), SHADE, 0.9, 4.35, 1.15, 1.15, 0.44, 0.95);
+  add(new THREE.SphereGeometry(0.75, 6, 5), LEAF, -0.8, 4.2, -1.05, 1.05, 0.4, 0.85);
   const box = new THREE.Box3(), v = new THREE.Vector3(), m = new THREE.Matrix4(), im = new THREE.Matrix4();
   g.updateMatrixWorld(true);
   g.traverse((n) => {

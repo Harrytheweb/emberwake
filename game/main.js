@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { ASSET, bakeStatic } from './assetlib.js?v=202609120856';
-import { createRig } from './rig.js?v=202609120856';
-import { Input } from './input.js?v=202609120856';
-import { createAudio } from './audio.js?v=202609120856';
+import { ASSET, bakeStatic } from './assetlib.js?v=202609120937';
+import { createRig } from './rig.js?v=202609120937';
+import { Input } from './input.js?v=202609120937';
+import { createAudio } from './audio.js?v=202609120937';
 
 const canvas = document.getElementById('c');
 const loadEl = document.getElementById('load');
@@ -39,9 +39,9 @@ const BOOK = [
 const STATE = {
   running: false, over: false, score: 0, meat: 0, hide: 0, feather: 0,
   taken: new Set(), bow: 1, quiver: 24, mounted: true, sneak: false,
-  yaw: Math.PI, pitch: 0.06, speed: 0, airborne: 0, hop: 0, gaitPhase: 0,
+  yaw: Math.PI * 0.94, pitch: 0.05, speed: 0, airborne: 0, hop: 0, gaitPhase: 0,
 };
-window.__GAME__ = { pos: [8, 18], fps: 60, speed: 0, score: 0, over: false, draws: 0, tris: 0 };
+window.__GAME__ = { pos: [4, 36], fps: 60, speed: 0, score: 0, over: false, draws: 0, tris: 0 };
 window.__READY__ = false;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -50,7 +50,7 @@ renderer.setSize(innerWidth, innerHeight, false);
 renderer.info.autoReset = false;
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.12, 900);
+const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.12, 2200);
 const input = new Input(canvas);
 const audio = createAudio();
 
@@ -60,7 +60,7 @@ const fences = [];
 const arrows = [];
 const dust = [];
 let stallPos = new THREE.Vector3(6, 0, 4);
-const horsePosV = new THREE.Vector3(8, 0, 18);
+const horsePosV = new THREE.Vector3(4, 0, 36);
 const hunterWorld = new THREE.Vector3();
 let lastT = performance.now();
 let shopOpen = false;
@@ -78,6 +78,36 @@ function rumble(ms, mag) {
       duration: ms, strongMagnitude: mag, weakMagnitude: mag * 0.6,
     }).catch(() => {});
   }
+}
+
+function groundY(x, z) {
+  const d = Math.hypot(x, z);
+  const flatten = THREE.MathUtils.smoothstep(d, 14, 95);
+  const roll = Math.sin(x * 0.007) * 3.4
+    + Math.sin(z * 0.0052 + 0.6) * 5.2
+    + Math.sin((x * 0.9 + z) * 0.011) * 1.8
+    + Math.sin(x * 0.024 + z * 0.018) * 0.85;
+  const rise = THREE.MathUtils.smoothstep(-z, 30, 240) * 6.5;
+  return roll * flatten + rise;
+}
+
+function grassMap() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#2db024';
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 5200; i++) {
+    const x = Math.random() * 256, y = Math.random() * 256;
+    ctx.fillStyle = i % 4 === 0 ? '#1a6e20' : (i % 3 === 0 ? '#4ad034' : '#24941f');
+    ctx.fillRect(x, y, 1 + (i % 2), 2 + (i % 3));
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(92, 92);
+  t.anisotropy = 4;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
 }
 
 function pickBiome(kind) {
@@ -100,6 +130,7 @@ async function boot() {
     ['./assets/grass_tuft.js', {}],
     ['./assets/horizon_peak.js', {}],
     ['./assets/dune_rise.js', { surfaces: true }],
+    ['./assets/cloud_puff.js', {}],
     ...BOOK.map((b) => [b.file, {}]),
   ];
   let done = 0;
@@ -115,30 +146,40 @@ async function boot() {
   const cottage = loaded[i++]; const stall = loaded[i++];
   const oakProto = loaded[i++]; const bushProto = loaded[i++];
   const fenceProto = loaded[i++]; const tuftProto = loaded[i++];
-  const peakProto = loaded[i++]; const duneProto = loaded[i++];
+  const peakProto = loaded[i++]; const duneProto = loaded[i++]; const cloudProto = loaded[i++];
   const animalProtos = {};
   for (const b of BOOK) animalProtos[b.id] = loaded[i++];
 
   rig = createRig(THREE, renderer, scene, {
-    hour: 6.55, azimuth: 95, tier: input.wantsTouch ? 'phone' : 'auto',
-    fogStart: 40, fogDensity: 0.0024, fillChroma: 1.6,
+    hour: 10.15, azimuth: 312, maxElevation: 40,
+    tier: input.wantsTouch ? 'phone' : 'high',
+    fogStart: 90, fogDensity: 0.00115, fillChroma: 2.05,
+    shadowDist: 200, sunIntensity: 9.2, exposure: 1.02,
+    cascades: input.wantsTouch ? 1 : 2,
   });
   await rig.ready.catch(() => {});
 
-  const ggeo = new THREE.CircleGeometry(320, 56);
+  const ggeo = new THREE.PlaneGeometry(860, 860, 148, 148);
   const gpos = ggeo.attributes.position;
   const gcol = new Float32Array(gpos.count * 3);
   const gc = new THREE.Color();
+  const hot = new THREE.Color(0x36C428);
+  const deep = new THREE.Color(0x1B7A24);
+  const sandC = new THREE.Color(0xD2B48C);
   for (let i = 0; i < gpos.count; i++) {
-    const x = gpos.getX(i), z = gpos.getY(i);
-    const sand = THREE.MathUtils.clamp((x - 140) / 80, 0, 1);
-    const gold = 0.35 + 0.25 * Math.sin(x * 0.03) * Math.cos(z * 0.03);
-    gc.setHex(0x7EC850).lerp(new THREE.Color(0xC2B280), gold * 0.45).lerp(new THREE.Color(0xE8A87C), sand);
+    const x = gpos.getX(i), z = -gpos.getY(i);
+    gpos.setZ(i, groundY(x, z));
+    const sand = THREE.MathUtils.clamp((x - 155) / 70, 0, 1);
+    const mott = 0.5 + 0.22 * Math.sin(x * 0.055) * Math.cos(z * 0.048);
+    gc.copy(hot).lerp(deep, mott * 0.38).lerp(sandC, sand);
     gcol[i * 3] = gc.r; gcol[i * 3 + 1] = gc.g; gcol[i * 3 + 2] = gc.b;
   }
   ggeo.setAttribute('color', new THREE.BufferAttribute(gcol, 3));
+  ggeo.computeVertexNormals();
+  const gtex = grassMap();
   const ground = new THREE.Mesh(ggeo, new THREE.MeshStandardMaterial({
-    color: 0xffffff, roughness: 0.95, metalness: 0, vertexColors: true,
+    color: 0xffffff, roughness: 0.9, metalness: 0, vertexColors: true,
+    map: gtex,
   }));
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
@@ -147,7 +188,7 @@ async function boot() {
 
   const sand = new THREE.Mesh(
     new THREE.CircleGeometry(90, 24),
-    new THREE.MeshStandardMaterial({ color: 0xE8A87C, roughness: 0.96, metalness: 0 }),
+    new THREE.MeshStandardMaterial({ color: 0xD2B48C, roughness: 0.96, metalness: 0 }),
   );
   sand.rotation.x = -Math.PI / 2;
   sand.position.set(210, 0.02, 20);
@@ -162,43 +203,47 @@ async function boot() {
   sea.position.set(310, -0.12, 20);
   scene.add(sea);
 
-  cottage.position.set(-8, 0, 2); cottage.rotation.y = 0.3; scene.add(cottage);
-  stall.position.copy(stallPos); stall.rotation.y = -0.4; scene.add(stall);
+  cottage.position.set(-48, groundY(-48, 22), 22); cottage.rotation.y = 0.3; scene.add(cottage);
+  stallPos.set(-38, 0, 24);
+  stall.position.set(stallPos.x, groundY(stallPos.x, stallPos.z), stallPos.z);
+  stall.rotation.y = -0.4; scene.add(stall);
 
   const village = new THREE.Group();
-  for (const [x, z, y] of [[-14, 8, 1.2], [4, -6, 2.1], [-3, 11, 0.4]]) {
-    const o = oakProto.clone(true); o.position.set(x, 0, z); o.rotation.y = y; village.add(o);
+  for (const [x, z, y] of [[-56, 28, 1.2], [-44, 36, 2.1], [-62, 16, 0.4]]) {
+    const o = oakProto.clone(true); o.position.set(x, groundY(x, z), z); o.rotation.y = y; village.add(o);
   }
-  for (const [x, z] of [[-2, 6], [2, 9], [10, 1], [-11, -3]]) {
-    const b = bushProto.clone(true); b.position.set(x, 0, z); village.add(b);
+  for (const [x, z] of [[-42, 26], [-52, 32], [-36, 30]]) {
+    const b = bushProto.clone(true); b.position.set(x, groundY(x, z), z); village.add(b);
   }
   scene.add(bakeStatic(village));
 
   const meadow = new THREE.Group();
-  const treeSpots = [];
-  for (let n = 0; n < 18; n++) {
-    const a = Math.random() * Math.PI * 2;
-    const r = 28 + Math.random() * 150;
-    const x = Math.cos(a) * r, z = Math.sin(a) * r;
-    if (x > 170) continue;
+  for (let n = 0; n < 14; n++) {
+    const side = n % 2 ? 1 : -1;
+    const x = side * (58 + Math.random() * 95);
+    const z = 10 + Math.random() * 130;
+    if (x > 170 || Math.abs(x) < 40) continue;
     const o = oakProto.clone(true);
-    o.position.set(x, 0, z);
+    o.position.set(x, groundY(x, z), z);
     o.rotation.y = Math.random() * 6;
-    o.scale.setScalar(0.75 + Math.random() * 0.55);
+    o.scale.setScalar(0.85 + Math.random() * 0.55);
     meadow.add(o);
-    treeSpots.push({ x, z });
   }
-  for (let n = 0; n < 22; n++) {
-    const a = Math.random() * Math.PI * 2, r = 20 + Math.random() * 140;
+  for (let n = 0; n < 16; n++) {
+    const x = (Math.random() < 0.5 ? -1 : 1) * (46 + Math.random() * 90);
+    const z = 8 + Math.random() * 110;
+    if (Math.abs(x) < 32) continue;
     const b = bushProto.clone(true);
-    b.position.set(Math.cos(a) * r, 0, Math.sin(a) * r);
+    b.position.set(x, groundY(x, z), z);
     meadow.add(b);
   }
-  for (let n = 0; n < 70; n++) {
-    const a = Math.random() * Math.PI * 2, r = 8 + Math.random() * 70;
+  for (let n = 0; n < 110; n++) {
+    const a = Math.random() * Math.PI * 2, r = 4 + Math.random() * 90;
+    const x = Math.cos(a) * r, z = Math.sin(a) * r;
     const t = tuftProto.clone(true);
-    t.position.set(Math.cos(a) * r, 0, Math.sin(a) * r);
+    t.position.set(x, groundY(x, z), z);
     t.rotation.y = Math.random() * 6;
+    t.scale.setScalar(0.8 + Math.random() * 0.7);
     meadow.add(t);
   }
   scene.add(bakeStatic(meadow));
@@ -211,7 +256,8 @@ async function boot() {
     for (let k = 0; k < n; k++) {
       const f = fenceProto.clone(true);
       const t = (k + 0.5) / n;
-      f.position.set(x0 + dx * t, 0, z0 + dz * t);
+      const px = x0 + dx * t, pz = z0 + dz * t;
+      f.position.set(px, groundY(px, pz), pz);
       f.rotation.y = yaw;
       rails.add(f);
       fences.push({ x: f.position.x, z: f.position.z, yaw, half: 1.2 });
@@ -223,7 +269,8 @@ async function boot() {
   const dunes = new THREE.Group();
   for (let n = 0; n < 8; n++) {
     const d = duneProto.clone(true);
-    d.position.set(175 + Math.random() * 40, 0, -20 + n * 12);
+    const dx = 175 + Math.random() * 40, dz = -20 + n * 12;
+    d.position.set(dx, groundY(dx, dz), dz);
     d.rotation.y = Math.random() * 6;
     d.scale.setScalar(1.2 + Math.random() * 1.4);
     dunes.add(d);
@@ -231,29 +278,48 @@ async function boot() {
   scene.add(bakeStatic(dunes));
 
   const peaks = new THREE.Group();
-  for (const [x, z, s] of [[-80, -260, 3.2], [40, -280, 4.1], [-160, -240, 2.6], [140, -250, 2.8]]) {
+  const cool = new THREE.Color(0xA7B8CC);
+  const ridge = (x, z, sx, sy, sz, ry, fade) => {
     const p = peakProto.clone(true);
-    p.position.set(x, 0, z); p.scale.setScalar(s); peaks.add(p);
-  }
+    p.position.set(x, Math.max(0, groundY(x, z) * 0.08), z);
+    p.scale.set(sx, sy, sz);
+    p.rotation.y = ry;
+    if (fade > 0.02) {
+      p.traverse((n) => {
+        if (!n.material) return;
+        n.material = n.material.clone();
+        n.material.color.lerp(cool, fade);
+      });
+    }
+    peaks.add(p);
+  };
+  for (let i = -4; i <= 4; i++) ridge(i * 52, -268, 1.7, 2.05, 1.55, i * 0.04, 0.08);
+  for (let i = -5; i <= 5; i++) ridge(i * 58 + 16, -390, 2.15, 2.55, 1.8, -i * 0.03, 0.38);
+  for (let i = -5; i <= 4; i++) ridge(i * 70 - 8, -540, 2.6, 3.15, 2.1, i * 0.025, 0.62);
   scene.add(bakeStatic(peaks));
 
+  const clouds = new THREE.Group();
+  for (let n = 0; n < 8; n++) {
+    const c = cloudProto.clone(true);
+    c.position.set(-220 + n * 62 + Math.random() * 18, 88 + (n % 3) * 16, -240 - Math.random() * 200);
+    c.scale.setScalar(5.4 + (n % 4) * 1.6);
+    clouds.add(c);
+  }
+  scene.add(bakeStatic(clouds));
+
   const near = new THREE.Group();
-  for (const [x, z, y] of [[4, 10, 0.4], [-6, 8, 1.1], [12, 6, 2.2], [-2, -8, 0.8], [18, 0, 1.6], [-16, -14, 0.2]]) {
-    const o = oakProto.clone(true); o.position.set(x, 0, z); o.rotation.y = y; o.scale.setScalar(0.85); near.add(o);
-  }
-  for (const [x, z] of [[6, 12], [10, 14], [3, 5], [-4, 3], [9, -2], [14, 8], [-8, -6], [2, -12]]) {
-    const b = bushProto.clone(true); b.position.set(x, 0, z); near.add(b);
-  }
-  for (let n = 0; n < 40; n++) {
+  for (let n = 0; n < 50; n++) {
     const t = tuftProto.clone(true);
-    const a = Math.random() * Math.PI * 2, r = 2 + Math.random() * 22;
-    t.position.set(8 + Math.cos(a) * r, 0, 18 + Math.sin(a) * r);
+    const a = Math.random() * Math.PI * 2, r = 3 + Math.random() * 28;
+    const x = 8 + Math.cos(a) * r, z = 18 + Math.sin(a) * r;
+    t.position.set(x, groundY(x, z), z);
     t.rotation.y = Math.random() * 6;
     near.add(t);
   }
   scene.add(bakeStatic(near));
 
   horse.position.copy(horsePosV);
+  horse.position.y = groundY(horse.position.x, horse.position.z);
   scene.add(horse);
   hunter.scale.setScalar(0.92);
   scene.add(hunter);
@@ -274,7 +340,7 @@ async function boot() {
     for (let n = 0; n < count; n++) {
       const p = pickBiome(def.biome);
       const obj = proto.clone(true);
-      obj.position.set(p.x, 0, p.z);
+      obj.position.set(p.x, groundY(p.x, p.z), p.z);
       obj.rotation.y = Math.random() * 6;
       scene.add(obj);
       animals.push({
@@ -296,7 +362,11 @@ function placeRider() {
     const saddle = horse.userData.joints?.saddle;
     hunter.position.set(0, 0.12, 0);
     if (saddle) {
-      hunter.position.set(0, -0.7, 0.04);
+      hunter.position.set(0, -0.86, 0.02);
+      hunter.rotation.set(0.06, 0, 0);
+      const jj = hunter.userData.joints || {};
+      if (jj.lleg) { jj.lleg.rotation.x = 1.05; jj.lleg.rotation.z = 0.18; }
+      if (jj.rleg) { jj.rleg.rotation.x = 1.05; jj.rleg.rotation.z = -0.18; }
       saddle.add(hunter);
     } else {
       hunter.position.copy(horse.position);
@@ -305,8 +375,13 @@ function placeRider() {
     }
   } else {
     if (hunter.parent && hunter.parent !== scene) scene.add(hunter);
-    hunter.position.set(horse.position.x + Math.sin(STATE.yaw) * 0.9, 0, horse.position.z + Math.cos(STATE.yaw) * 0.9);
-    hunter.rotation.y = STATE.yaw;
+    const hx = horse.position.x + Math.sin(STATE.yaw) * 0.9;
+    const hz = horse.position.z + Math.cos(STATE.yaw) * 0.9;
+    hunter.position.set(hx, groundY(hx, hz), hz);
+    hunter.rotation.set(0, STATE.yaw, 0);
+    const jj = hunter.userData.joints || {};
+    if (jj.lleg) { jj.lleg.rotation.x = 0; jj.lleg.rotation.z = 0; }
+    if (jj.rleg) { jj.rleg.rotation.x = 0; jj.rleg.rotation.z = 0; }
   }
 }
 
@@ -363,22 +438,23 @@ function moveMountedClean(dt, mv) {
   horse.rotation.y = STATE.yaw;
   if (STATE.airborne > 0) {
     STATE.airborne -= dt;
-    horse.position.y = Math.sin((1 - STATE.airborne / 0.62) * Math.PI) * STATE.hop;
-    if (STATE.airborne <= 0) horse.position.y = 0;
+    horse.position.y = groundY(horse.position.x, horse.position.z) + Math.sin((1 - STATE.airborne / 0.62) * Math.PI) * STATE.hop;
+    if (STATE.airborne <= 0) horse.position.y = groundY(horse.position.x, horse.position.z);
   } else {
-    horse.position.y = 0;
+    horse.position.y = groundY(horse.position.x, horse.position.z);
     if (input.jumpTap) { tryJump(); input.jumpTap = false; }
     else tryJump();
   }
   STATE.gaitPhase += STATE.speed * dt * 2.1;
   const j = horse.userData.joints || {};
+  if (j.neck && j.neck.userData.restX == null) j.neck.userData.restX = 0.62;
   const swing = Math.sin(STATE.gaitPhase) * Math.min(0.55, STATE.speed * 0.045);
   if (j.fl) j.fl.rotation.x = swing;
   if (j.fr) j.fr.rotation.x = -swing;
   if (j.bl) j.bl.rotation.x = -swing;
   if (j.br) j.br.rotation.x = swing;
   if (j.body) j.body.rotation.x = Math.sin(STATE.gaitPhase * 2) * Math.min(0.04, STATE.speed * 0.003);
-  if (j.neck) j.neck.rotation.x = -STATE.pitch * 0.25;
+  if (j.neck) j.neck.rotation.x = (j.neck.userData.restX || 0) - STATE.pitch * 0.25;
   if (STATE.speed > 10) {
     rumble(40, 0.18 + (STATE.speed - 10) * 0.02);
     if (Math.random() < dt * 8) spawnDust(horse.position);
@@ -396,7 +472,7 @@ function moveFoot(dt, mv) {
   const fz = Math.cos(STATE.yaw) * mv.y + Math.cos(STATE.yaw + Math.PI / 2) * mv.x;
   hunter.position.x += fx * max * dt;
   hunter.position.z += fz * max * dt;
-  hunter.position.y = sneak ? -0.12 : 0;
+  hunter.position.y = groundY(hunter.position.x, hunter.position.z) + (sneak ? -0.12 : 0);
   hunter.rotation.y = STATE.yaw;
   const j = hunter.userData.joints || {};
   const swing = Math.sin(performance.now() * 0.01 * (sneak ? 0.5 : 1)) * mag * 0.5;
@@ -419,15 +495,17 @@ function updateCamera() {
   STATE.yaw += look.x;
   STATE.pitch = THREE.MathUtils.clamp(STATE.pitch + look.y, -0.7, 0.55);
   const origin = riderPos();
-  const back = STATE.mounted ? (input.fireHeld ? 4.2 : 7.2) : (STATE.sneak ? 2.6 : 3.8);
-  const height = STATE.mounted ? 2.45 : (STATE.sneak ? 1.25 : 1.62);
+  const back = STATE.mounted ? (input.fireHeld ? 5.4 : 10.4) : (STATE.sneak ? 2.6 : 3.8);
+  const height = STATE.mounted ? 1.58 : (STATE.sneak ? 1.25 : 1.62);
   const fx = Math.sin(STATE.yaw), fz = Math.cos(STATE.yaw);
+  const rx = Math.sin(STATE.yaw + Math.PI / 2), rz = Math.cos(STATE.yaw + Math.PI / 2);
+  const side = STATE.mounted ? 4.8 : 0.2;
   camera.position.set(
-    origin.x - fx * back,
-    origin.y + height + 0.35 - STATE.pitch * 1.4,
-    origin.z - fz * back,
+    origin.x - fx * back + rx * side,
+    origin.y + height + 0.42 - STATE.pitch * 1.4,
+    origin.z - fz * back + rz * side,
   );
-  camera.lookAt(origin.x + fx * 4, origin.y + height + STATE.pitch * 3.5, origin.z + fz * 4);
+  camera.lookAt(origin.x + fx * 9, origin.y + 1.02 + STATE.pitch * 5.4, origin.z + fz * 9);
 }
 
 function loose() {
@@ -532,6 +610,7 @@ function updateAnimals(dt) {
     }
     an.obj.position.x = THREE.MathUtils.clamp(an.obj.position.x, -230, 230);
     an.obj.position.z = THREE.MathUtils.clamp(an.obj.position.z, -210, 210);
+    an.obj.position.y = groundY(an.obj.position.x, an.obj.position.z);
   }
 }
 
