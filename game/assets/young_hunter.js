@@ -7,7 +7,7 @@ export default function (THREE) {
     if (name) m.name = name;
     return m;
   };
-  const CLOTH = mat(0xC4B8A4, 'fabric', { roughness: 0.84 });
+  const CLOTH = mat(0x6A5A48, 'fabric', { roughness: 0.84 });
   const LEATH = mat(0x2C2C2E, 'fabric', { roughness: 0.78 });
   const PLATE = mat(0x4A3728, 'fabric', { roughness: 0.72 });
   const SKIN = mat(0xC4A07A, 'fabric', { roughness: 0.62 });

@@ -292,18 +292,18 @@ async function boot() {
 
   const ridges = new THREE.Group();
   const ridgeFn = (freq, seed) => (nx, nz, height) => {
-    const major = Math.pow(Math.max(0, Math.sin((nx * freq + seed) * Math.PI)), 1.35);
-    const minor = Math.pow(Math.max(0, Math.sin((nx * (freq * 1.7) + seed * 2.2) * Math.PI)), 2.1) * 0.28;
-    const envelope = Math.pow(Math.max(0, 1 - Math.abs(nx) * 1.12), 0.8);
-    const spine = Math.pow(Math.max(0, 1 - Math.abs(nz) * 1.85), 1.6);
-    return Math.max(0, (major * 0.78 + minor) * envelope * spine * height);
+    const major = 0.42 + 0.58 * Math.pow(Math.abs(Math.sin((nx * freq + seed) * Math.PI)), 0.82);
+    const minor = Math.pow(Math.max(0, Math.sin((nx * freq * 2.05 + seed * 1.6) * Math.PI)), 1.7) * 0.2;
+    const envelope = Math.pow(Math.max(0, 1 - Math.abs(nx) * 0.68), 0.5);
+    const spine = Math.pow(Math.max(0, 1 - Math.abs(nz) * 1.65), 1.3);
+    return Math.max(0, (major * 0.82 + minor) * envelope * spine * height);
   };
-  const rNear = makeRidgeMesh(880, 90, 160, 14, 72, 0x243038, ridgeFn(3.2, 0.15));
-  rNear.position.set(6, 2, -210);
-  const rMid = makeRidgeMesh(980, 100, 150, 12, 96, 0x2C4058, ridgeFn(2.8, 1.05), { lit: false });
-  rMid.position.set(-20, 16, -305);
-  const rFar = makeRidgeMesh(1160, 110, 140, 10, 118, 0x3A5478, ridgeFn(2.4, 2.1), { lit: false });
-  rFar.position.set(24, 28, -420);
+  const rNear = makeRidgeMesh(1400, 80, 180, 12, 52, 0x3A4E5A, ridgeFn(4.4, 0.12));
+  rNear.position.set(4, 1, -205);
+  const rMid = makeRidgeMesh(1600, 90, 170, 11, 78, 0x5A7388, ridgeFn(3.7, 0.9), { lit: false });
+  rMid.position.set(-14, 14, -295);
+  const rFar = makeRidgeMesh(1800, 100, 160, 10, 104, 0x7A96B0, ridgeFn(3.1, 1.8), { lit: false });
+  rFar.position.set(18, 26, -400);
   ridges.add(rNear, rMid, rFar);
   for (let i = -2; i <= 2; i++) {
     const p = peakProto.clone(true);
@@ -511,9 +511,9 @@ function updateCamera() {
   const zoom = input.fireHeld || input.aimHeld;
   const phone = input.wantsTouch;
   const cams = phone ? [
-    { back: 6.2, side: 2.6, height: 2.55 },
-    { back: 8.2, side: 1.2, height: 2.7 },
-    { back: 4.2, side: 0.3, height: 2.2 },
+    { back: 7.0, side: 1.35, height: 2.7 },
+    { back: 8.4, side: 0.8, height: 2.85 },
+    { back: 4.4, side: 0.25, height: 2.25 },
   ] : [
     { back: 5.8, side: 6.0, height: 2.05 },
     { back: 8.2, side: 2.0, height: 2.15 },
