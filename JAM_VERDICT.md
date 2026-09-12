@@ -24,4 +24,4 @@ RESULT: PASS
 === END ===
 ```
 
-The pastoral look and density passes after this block are `game/` changes at the same play URL. Re-run the live gate once Pages has `f7e9349382c64aa19d2416142aa885f93936e6e0`. Local software-renderer checks: 593 draws / 404k tris desktop, 338 draws / 284k tris phone, stick drag 1.72 m, all 13 labelled controls visible with no overlaps.
+The country rebuild after this block is a `game/` change at the same play URL. Re-run the live gate once Pages has `fc2682ed014e2a4dffd2dbaca452a69126f8a1bf`. Local software-renderer checks: 453 draws / 288k tris desktop, 275 / 220k phone, stick drag 1.72 m, all 13 labelled controls visible with no overlaps.
