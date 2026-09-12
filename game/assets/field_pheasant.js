@@ -34,4 +34,3 @@ export default function (THREE) {
   g.children.forEach((o) => { o.position.x -= c.x; o.position.y -= box.min.y; o.position.z -= c.z; });
   return g;
 }
-}

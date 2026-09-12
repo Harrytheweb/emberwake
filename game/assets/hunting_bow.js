@@ -37,11 +37,18 @@ export default function (THREE) {
   string.position.set(0.07, 0, 0);
   g.add(string);
 
+  for (let i = 0; i < 4; i++) {
+    const wrap = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.004, 5, 8), CORD);
+    wrap.position.set(0, -0.18 + i * 0.12, 0);
+    wrap.rotation.x = Math.PI / 2;
+    g.add(wrap);
+  }
   const nock = new THREE.Mesh(new THREE.TorusGeometry(0.016, 0.004, 4, 8), CORD);
   nock.position.set(0.07, 0.54, 0);
   nock.rotation.x = Math.PI / 2;
   g.add(nock);
 
+  g.userData.mounts = ['left', 'right'];
   const box = new THREE.Box3(), v = new THREE.Vector3(), m = new THREE.Matrix4(), im = new THREE.Matrix4();
   g.updateMatrixWorld(true);
   g.traverse((n) => {

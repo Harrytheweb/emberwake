@@ -12,11 +12,13 @@ export default function (THREE) {
     const mesh = new THREE.Mesh(geo, m);
     mesh.position.set(x, y, z); mesh.rotation.set(rx, ry, rz); g.add(mesh);
   };
-  add(new THREE.ConeGeometry(11, 28, 7), ROCK, 0, 14, 0);
-  add(new THREE.ConeGeometry(7.5, 20, 6), SHADE, 8, 10, -3);
-  add(new THREE.ConeGeometry(6.2, 16, 6), ROCK, -7, 8, 2);
-  add(new THREE.CylinderGeometry(12, 14, 4, 8), EARTH, 1, 2, 0);
+  add(new THREE.ConeGeometry(11, 28, 14), ROCK, 0, 14, 0);
+  add(new THREE.ConeGeometry(7.5, 20, 12), SHADE, 8, 10, -3);
+  add(new THREE.ConeGeometry(6.2, 16, 11), ROCK, -7, 8, 2);
+  add(new THREE.ConeGeometry(5.0, 12, 10), SHADE, 12, 6, 4);
+  add(new THREE.CylinderGeometry(12, 14, 4, 10), EARTH, 1, 2, 0);
   add(new THREE.BoxGeometry(6, 3.5, 5), ROCK, 3, 18, -1, 0, 0.4, 0.15);
+  add(new THREE.BoxGeometry(4, 2.2, 3.5), ROCK, -4, 16, 1, 0.2, -0.3, 0);
   const box = new THREE.Box3(), v = new THREE.Vector3(), m = new THREE.Matrix4(), im = new THREE.Matrix4();
   g.updateMatrixWorld(true);
   g.traverse((n) => {

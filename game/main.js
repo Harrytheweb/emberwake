@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { ASSET, bakeStatic } from './assetlib.js';
-import { createRig } from './rig.js';
-import { Input } from './input.js';
-import { createAudio } from './audio.js';
+import { ASSET, bakeStatic } from './assetlib.js?v=202609120856';
+import { createRig } from './rig.js?v=202609120856';
+import { Input } from './input.js?v=202609120856';
+import { createAudio } from './audio.js?v=202609120856';
 
 const canvas = document.getElementById('c');
 const loadEl = document.getElementById('load');
@@ -39,7 +39,7 @@ const BOOK = [
 const STATE = {
   running: false, over: false, score: 0, meat: 0, hide: 0, feather: 0,
   taken: new Set(), bow: 1, quiver: 24, mounted: true, sneak: false,
-  yaw: 0, pitch: 0.08, speed: 0, airborne: 0, hop: 0, gaitPhase: 0,
+  yaw: Math.PI, pitch: 0.06, speed: 0, airborne: 0, hop: 0, gaitPhase: 0,
 };
 window.__GAME__ = { pos: [8, 18], fps: 60, speed: 0, score: 0, over: false, draws: 0, tris: 0 };
 window.__READY__ = false;
@@ -120,15 +120,26 @@ async function boot() {
   for (const b of BOOK) animalProtos[b.id] = loaded[i++];
 
   rig = createRig(THREE, renderer, scene, {
-    hour: 7.15, azimuth: 88, tier: input.wantsTouch ? 'phone' : 'auto',
-    fogStart: 80, fogDensity: 0.0016,
+    hour: 6.55, azimuth: 95, tier: input.wantsTouch ? 'phone' : 'auto',
+    fogStart: 40, fogDensity: 0.0024, fillChroma: 1.6,
   });
   await rig.ready.catch(() => {});
 
-  const ground = new THREE.Mesh(
-    new THREE.CircleGeometry(320, 48),
-    new THREE.MeshStandardMaterial({ color: 0x7EC850, roughness: 0.95, metalness: 0 }),
-  );
+  const ggeo = new THREE.CircleGeometry(320, 56);
+  const gpos = ggeo.attributes.position;
+  const gcol = new Float32Array(gpos.count * 3);
+  const gc = new THREE.Color();
+  for (let i = 0; i < gpos.count; i++) {
+    const x = gpos.getX(i), z = gpos.getY(i);
+    const sand = THREE.MathUtils.clamp((x - 140) / 80, 0, 1);
+    const gold = 0.35 + 0.25 * Math.sin(x * 0.03) * Math.cos(z * 0.03);
+    gc.setHex(0x7EC850).lerp(new THREE.Color(0xC2B280), gold * 0.45).lerp(new THREE.Color(0xE8A87C), sand);
+    gcol[i * 3] = gc.r; gcol[i * 3 + 1] = gc.g; gcol[i * 3 + 2] = gc.b;
+  }
+  ggeo.setAttribute('color', new THREE.BufferAttribute(gcol, 3));
+  const ground = new THREE.Mesh(ggeo, new THREE.MeshStandardMaterial({
+    color: 0xffffff, roughness: 0.95, metalness: 0, vertexColors: true,
+  }));
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   ground.material.name = 'ground';
@@ -226,6 +237,22 @@ async function boot() {
   }
   scene.add(bakeStatic(peaks));
 
+  const near = new THREE.Group();
+  for (const [x, z, y] of [[4, 10, 0.4], [-6, 8, 1.1], [12, 6, 2.2], [-2, -8, 0.8], [18, 0, 1.6], [-16, -14, 0.2]]) {
+    const o = oakProto.clone(true); o.position.set(x, 0, z); o.rotation.y = y; o.scale.setScalar(0.85); near.add(o);
+  }
+  for (const [x, z] of [[6, 12], [10, 14], [3, 5], [-4, 3], [9, -2], [14, 8], [-8, -6], [2, -12]]) {
+    const b = bushProto.clone(true); b.position.set(x, 0, z); near.add(b);
+  }
+  for (let n = 0; n < 40; n++) {
+    const t = tuftProto.clone(true);
+    const a = Math.random() * Math.PI * 2, r = 2 + Math.random() * 22;
+    t.position.set(8 + Math.cos(a) * r, 0, 18 + Math.sin(a) * r);
+    t.rotation.y = Math.random() * 6;
+    near.add(t);
+  }
+  scene.add(bakeStatic(near));
+
   horse.position.copy(horsePosV);
   scene.add(horse);
   hunter.scale.setScalar(0.92);
@@ -269,6 +296,7 @@ function placeRider() {
     const saddle = horse.userData.joints?.saddle;
     hunter.position.set(0, 0.12, 0);
     if (saddle) {
+      hunter.position.set(0, -0.7, 0.04);
       saddle.add(hunter);
     } else {
       hunter.position.copy(horse.position);
@@ -391,8 +419,8 @@ function updateCamera() {
   STATE.yaw += look.x;
   STATE.pitch = THREE.MathUtils.clamp(STATE.pitch + look.y, -0.7, 0.55);
   const origin = riderPos();
-  const back = STATE.mounted ? (input.fireHeld ? 3.6 : 6.4) : (STATE.sneak ? 2.6 : 3.8);
-  const height = STATE.mounted ? 2.15 : (STATE.sneak ? 1.25 : 1.62);
+  const back = STATE.mounted ? (input.fireHeld ? 4.2 : 7.2) : (STATE.sneak ? 2.6 : 3.8);
+  const height = STATE.mounted ? 2.45 : (STATE.sneak ? 1.25 : 1.62);
   const fx = Math.sin(STATE.yaw), fz = Math.cos(STATE.yaw);
   camera.position.set(
     origin.x - fx * back,

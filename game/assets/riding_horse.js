@@ -31,13 +31,13 @@ export default function (THREE) {
   add(body, new THREE.SphereGeometry(0.22, 8, 6), HIDE, 0, 0.16, 0.38);
 
   const neck = new THREE.Group();
-  neck.position.set(0, 0.22, 0.42);
+  neck.position.set(0, 0.16, 0.38);
   body.add(neck);
-  add(neck, new THREE.CylinderGeometry(0.12, 0.16, 0.52, 8), HIDE, 0, 0.18, 0.16, 0.85, 0, 0);
-  add(neck, new THREE.BoxGeometry(0.06, 0.22, 0.36), MANE, 0, 0.34, 0.08, 0.7, 0, 0);
+  add(neck, new THREE.CylinderGeometry(0.13, 0.18, 0.36, 8), HIDE, 0, 0.12, 0.10, 0.95, 0, 0);
+  add(neck, new THREE.BoxGeometry(0.06, 0.16, 0.28), MANE, 0, 0.22, 0.04, 0.8, 0, 0);
 
   const head = new THREE.Group();
-  head.position.set(0, 0.42, 0.38);
+  head.position.set(0, 0.28, 0.26);
   neck.add(head);
   add(head, new THREE.BoxGeometry(0.16, 0.16, 0.28), HIDE, 0, 0.02, 0.10);
   add(head, new THREE.BoxGeometry(0.12, 0.10, 0.22), HIDE2, 0, -0.02, 0.28);

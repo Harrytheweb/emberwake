@@ -13,7 +13,7 @@ export default function (THREE) {
     sh.moveTo(-w, 0); sh.lineTo(w, 0); sh.lineTo(w * 0.2, h); sh.lineTo(-w * 0.15, h * 0.96);
     return new THREE.ExtrudeGeometry(sh, { depth: 0.006, bevelEnabled: false });
   };
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < 14; i++) {
     const a = (i / 9) * Math.PI * 2;
     const h = 0.28 + (i % 3) * 0.05;
     const mesh = new THREE.Mesh(blade(h, 0.018, i % 2 ? A : B), i % 3 === 0 ? C : (i % 2 ? A : B));

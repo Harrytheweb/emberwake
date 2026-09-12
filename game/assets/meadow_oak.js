@@ -26,6 +26,8 @@ export default function (THREE) {
   add(new THREE.SphereGeometry(0.95, 8, 6), SUN, 0.2, 7.6, -0.55);
   add(new THREE.SphereGeometry(0.85, 8, 6), LEAF, -0.35, 7.3, 0.85);
   add(new THREE.SphereGeometry(0.7, 7, 5), SUN, 0.85, 7.1, 0.9);
+  add(new THREE.SphereGeometry(1.1, 8, 6), LEAF, 0.4, 6.3, 1.15);
+  add(new THREE.SphereGeometry(1.0, 8, 6), SUN, -0.2, 6.1, -1.2);
   const box = new THREE.Box3(), v = new THREE.Vector3(), m = new THREE.Matrix4(), im = new THREE.Matrix4();
   g.updateMatrixWorld(true);
   g.traverse((n) => {
