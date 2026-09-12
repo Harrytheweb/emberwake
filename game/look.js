@@ -1,7 +1,6 @@
 /**
- * Meadow look helpers. Technique from the recipe (PBR canvases, cutout cards,
- * displaced terrain, two-temperature light, a cheap display-space grade) —
- * not copied from any reference game.
+ * Country look. Recipe technique (PBR canvases, displaced mass, two
+ * temperatures) — not Nintendo, not Rockstar, not a neon card field.
  */
 import * as THREE from 'three';
 
@@ -53,7 +52,7 @@ function heightToNormal(h, size, strength) {
   return out;
 }
 
-/** Electric meadow: vertical blades, sunlit clumps, cool hollows. */
+/** Soil + meadow. Olive, earth, dry straw — never electric green. */
 export function grassMaps() {
   const size = 512;
   const h = new Float32Array(size * size);
@@ -61,184 +60,35 @@ export function grassMaps() {
   const rgh = new Uint8ClampedArray(size * size * 4);
   for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
     const u = x / size, v = y / size;
-    const clump = fbm(u * 6.5, v * 6.5, 5);
-    const streak = fbm(u * 3.2, v * 22, 3);
-    const blade = Math.pow(Math.abs(Math.sin((u * 110 + streak * 3.4) * Math.PI)), 0.55);
-    const grit = fbm(u * 28, v * 28, 3);
-    h[y * size + x] = blade * 0.62 + clump * 0.38;
-    const hot = clump > 0.48;
-    const r = hot ? 28 + blade * 22 : 12 + blade * 16;
-    const g = hot ? 198 + blade * 48 : 118 + blade * 36;
-    const b = hot ? 22 + grit * 14 : 18 + grit * 10;
+    const clump = fbm(u * 5.2, v * 5.2, 5);
+    const dirt = fbm(u * 9.5 + 4, v * 9.5, 4);
+    const blade = Math.pow(Math.abs(Math.sin((u * 48 + fbm(u * 3, v * 14, 2) * 2) * Math.PI)), 0.7);
+    h[y * size + x] = blade * 0.45 + clump * 0.55;
+    const soil = dirt > 0.62;
+    const dry = clump < 0.38;
+    let r, g, b;
+    if (soil) {
+      r = 92 + dirt * 28; g = 72 + dirt * 18; b = 48 + dirt * 10;
+    } else if (dry) {
+      r = 98 + blade * 20; g = 108 + blade * 18; b = 52 + blade * 8;
+    } else {
+      r = 62 + blade * 16; g = 92 + blade * 28; b = 44 + blade * 8;
+    }
     const i = (y * size + x) * 4;
     alb[i] = r; alb[i + 1] = g; alb[i + 2] = b; alb[i + 3] = 255;
-    const rk = 155 + blade * 70;
+    const rk = soil ? 210 : 170 + blade * 40;
     rgh[i] = rk; rgh[i + 1] = rk; rgh[i + 2] = rk; rgh[i + 3] = 255;
   }
   const map = canvasTex(size, (data) => { data.set(alb); }, { srgb: true });
-  map.repeat.set(56, 56);
+  map.repeat.set(42, 42);
   const roughnessMap = canvasTex(size, (data) => { data.set(rgh); });
-  roughnessMap.repeat.set(56, 56);
-  const normalMap = canvasTex(size, (data) => { data.set(heightToNormal(h, size, 3.4)); });
-  normalMap.repeat.set(56, 56);
+  roughnessMap.repeat.set(42, 42);
+  const normalMap = canvasTex(size, (data) => { data.set(heightToNormal(h, size, 2.1)); });
+  normalMap.repeat.set(42, 42);
   return { map, roughnessMap, normalMap };
 }
 
-/** Alpha blade card — recipe-style cutout density, our own strokes. */
-export function grassCardTex() {
-  const w = 160, h = 220;
-  const c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, w, h);
-  for (let i = 0; i < 16; i++) {
-    const x = 14 + (i / 15) * 132 + (noise2(i, 2) - 0.5) * 12;
-    const top = 6 + noise2(i, 5) * 36;
-    const grd = ctx.createLinearGradient(x, h, x, top);
-    grd.addColorStop(0, '#145218');
-    grd.addColorStop(0.4, i % 2 ? '#2a9a26' : '#3ec12a');
-    grd.addColorStop(1, '#8aea4a');
-    ctx.strokeStyle = grd;
-    ctx.lineWidth = 2.4 + (i % 3) * 0.7;
-    ctx.beginPath();
-    ctx.moveTo(x, h - 2);
-    ctx.quadraticCurveTo(x + (i % 2 ? 8 : -9), h * 0.48, x + (noise2(i, 8) - 0.5) * 16, top);
-    ctx.stroke();
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
-
-export function placeGrassCards(count, around, radius, getY, { scale = 1, seed = 0 } = {}) {
-  const tex = grassCardTex();
-  const geo = new THREE.PlaneGeometry(0.48, 0.62);
-  const mat = new THREE.MeshStandardMaterial({
-    map: tex, transparent: true, alphaTest: 0.26, side: THREE.DoubleSide,
-    roughness: 0.78, metalness: 0, color: 0x3EC12A,
-  });
-  mat.name = 'foliage';
-  const inst = new THREE.InstancedMesh(geo, mat, count);
-  inst.castShadow = true;
-  inst.receiveShadow = true;
-  const dummy = new THREE.Object3D();
-  let n = 0;
-  for (let i = 0; i < count; i++) {
-    const a = (i / count) * Math.PI * 2 + noise2(i + seed, 1) * 0.5;
-    const r = 1.6 + Math.sqrt(noise2(i + seed, 3)) * radius;
-    const x = around.x + Math.cos(a) * r;
-    const z = around.z + Math.sin(a) * r;
-    dummy.position.set(x, (getY ? getY(x, z) : around.y) + 0.28 * scale, z);
-    dummy.rotation.set(0, a + Math.PI / 2, (noise2(i, 7) - 0.5) * 0.18);
-    dummy.scale.setScalar((0.85 + noise2(i, 9) * 0.85) * scale);
-    dummy.updateMatrix();
-    inst.setMatrixAt(n++, dummy.matrix);
-  }
-  inst.count = n;
-  inst.instanceMatrix.needsUpdate = true;
-  return inst;
-}
-
-/** Distant oak cards — one draw, our own silhouette, not a copied sprite. */
-export function treeCardTex() {
-  const s = 256;
-  const c = document.createElement('canvas');
-  c.width = c.height = s;
-  const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, s, s);
-  ctx.fillStyle = '#3A2A22';
-  ctx.fillRect(118, 150, 20, 96);
-  ctx.beginPath();
-  ctx.moveTo(110, 168);
-  ctx.lineTo(72, 118);
-  ctx.lineTo(118, 148);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(146, 168);
-  ctx.lineTo(188, 122);
-  ctx.lineTo(138, 148);
-  ctx.fill();
-  const blobs = [
-    [128, 96, 78, '#1f5a22'], [88, 108, 52, '#2a7a28'], [172, 104, 56, '#3a9a2e'],
-    [118, 62, 48, '#2f6b2a'], [150, 70, 42, '#247020'], [100, 78, 36, '#1a5a22'],
-  ];
-  for (const [x, y, r, col] of blobs) {
-    const g = ctx.createRadialGradient(x - r * 0.2, y - r * 0.25, 4, x, y, r);
-    g.addColorStop(0, col);
-    g.addColorStop(1, 'rgba(20,70,28,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
-
-export function placeTreeCards(count, getY) {
-  const tex = treeCardTex();
-  const geo = new THREE.PlaneGeometry(7.4, 8.6);
-  const mat = new THREE.MeshStandardMaterial({
-    map: tex, transparent: true, alphaTest: 0.32, side: THREE.DoubleSide,
-    roughness: 0.9, metalness: 0, color: 0xffffff,
-  });
-  mat.name = 'foliage';
-  const inst = new THREE.InstancedMesh(geo, mat, count);
-  inst.castShadow = true;
-  inst.receiveShadow = true;
-  const dummy = new THREE.Object3D();
-  let n = 0;
-  for (let i = 0; i < count; i++) {
-    const side = i % 2 ? 1 : -1;
-    const x = side * (70 + noise2(i, 2) * 110);
-    const z = -40 + noise2(i, 4) * 160;
-    if (Math.abs(x) < 36) continue;
-    dummy.position.set(x, (getY ? getY(x, z) : 0) + 4.1, z);
-    dummy.rotation.set(0, noise2(i, 6) * Math.PI, 0);
-    dummy.scale.setScalar(0.85 + noise2(i, 8) * 0.7);
-    dummy.updateMatrix();
-    inst.setMatrixAt(n++, dummy.matrix);
-  }
-  inst.count = n;
-  inst.instanceMatrix.needsUpdate = true;
-  return inst;
-}
-
-/**
- * Alpine ridge. Lit faces stay blue-grey because the albedo is kept dark and
- * far layers ignore the key (MeshBasic) so ACES cannot snow them.
- */
-export function makeRidgeMesh(width, depth, segW, segD, height, color, yFn, { lit = true } = {}) {
-  const geo = new THREE.PlaneGeometry(width, depth, segW, segD);
-  const pos = geo.attributes.position;
-  const col = new Float32Array(pos.count * 3);
-  const c = new THREE.Color(color);
-  const shade = new THREE.Color(0x1A2836);
-  const cool = new THREE.Color(0x4A6580);
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), z = pos.getY(i);
-    const nx = x / width, nz = z / depth;
-    const h = yFn(nx, nz, height);
-    pos.setZ(i, h);
-    const t = THREE.MathUtils.clamp(h / Math.max(0.001, height), 0, 1);
-    const cc = c.clone()
-      .lerp(shade, 0.38 * (1 - t) + Math.max(0, nz) * 0.16)
-      .lerp(cool, t * 0.18);
-    col[i * 3] = cc.r; col[i * 3 + 1] = cc.g; col[i * 3 + 2] = cc.b;
-  }
-  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  geo.computeVertexNormals();
-  const mat = lit
-    ? new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true })
-    : new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true, fog: true });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.rotation.x = -Math.PI / 2;
-  mesh.castShadow = lit;
-  mesh.receiveShadow = lit;
-  return mesh;
-}
-
+/** Soft cloud volume, far and thin. */
 export function cloudCardTex() {
   const s = 256;
   const c = document.createElement('canvas');
@@ -248,9 +98,9 @@ export function cloudCardTex() {
   for (let i = 0; i < 8; i++) {
     const x = 64 + (i % 4) * 36, y = 108 + Math.floor(i / 4) * 26;
     const g = ctx.createRadialGradient(x, y, 3, x, y, 46 + (i % 3) * 8);
-    g.addColorStop(0, 'rgba(255,255,255,0.78)');
-    g.addColorStop(0.5, 'rgba(236,244,252,0.38)');
-    g.addColorStop(1, 'rgba(236,244,252,0)');
+    g.addColorStop(0, 'rgba(255,252,246,0.55)');
+    g.addColorStop(0.5, 'rgba(236,240,246,0.22)');
+    g.addColorStop(1, 'rgba(236,240,246,0)');
     ctx.fillStyle = g;
     ctx.beginPath();
     ctx.arc(x, y, 54, 0, Math.PI * 2);
@@ -263,51 +113,60 @@ export function cloudCardTex() {
 
 export function placeCloudCards() {
   const tex = cloudCardTex();
-  const geo = new THREE.PlaneGeometry(110, 42);
+  const geo = new THREE.PlaneGeometry(140, 48);
   const mat = new THREE.MeshBasicMaterial({
     map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: true,
   });
   const g = new THREE.Group();
-  for (let n = 0; n < 9; n++) {
+  for (let n = 0; n < 6; n++) {
     const m = new THREE.Mesh(geo, mat);
-    m.position.set(-280 + n * 78, 108 + (n % 3) * 22, -340 - (n % 5) * 70);
-    m.rotation.y = 0.12 * (n % 3 - 1);
-    m.scale.setScalar(1.15 + (n % 3) * 0.28);
+    m.position.set(-260 + n * 90, 120 + (n % 3) * 16, -380 - (n % 4) * 50);
+    m.rotation.y = 0.1 * (n % 3 - 1);
+    m.scale.setScalar(1.2 + (n % 3) * 0.2);
     g.add(m);
   }
   return g;
 }
 
 /**
- * Display-space pastoral grade (after ACES). Lifts meadow green and sky blue
- * without a global milk filter — warehouse technique, our own weights.
+ * Mountain mass with strata. Smooth spines, rock bands, cool distance —
+ * a wall of country, not a blue pancake and not shattered glass.
  */
-export function pastoralGrade() {
-  return {
-    uniforms: { tDiffuse: { value: null } },
-    vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
-    fragmentShader: `
-      uniform sampler2D tDiffuse; varying vec2 vUv;
-      void main(){
-        vec3 col = texture2D(tDiffuse, vUv).rgb;
-        float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
-        float green = smoothstep(0.10, 0.48, col.g) * (1.0 - smoothstep(0.62, 0.96, l));
-        col.g = mix(col.g, min(1.0, col.g * 1.16), green * 0.62);
-        col.r = mix(col.r, col.r * 0.92, green * 0.4);
-        float sky = smoothstep(0.48, 0.88, l) * smoothstep(0.18, -0.04, col.g - col.b);
-        col.b = mix(col.b, min(1.0, col.b * 1.28), sky * 0.85);
-        col.g = mix(col.g, col.g * 0.94, sky * 0.34);
-        col.r = mix(col.r, col.r * 0.78, sky * 0.58);
-        vec2 c = vUv - 0.5;
-        float v = smoothstep(0.94, 0.26, dot(c, c) * 2.05);
-        col *= mix(1.0, v, 0.18);
-        gl_FragColor = vec4(col, 1.0);
-      }`,
-  };
+export function makeRidgeMesh(width, depth, segW, segD, height, color, yFn, { lit = true } = {}) {
+  const geo = new THREE.PlaneGeometry(width, depth, segW, segD);
+  const pos = geo.attributes.position;
+  const col = new Float32Array(pos.count * 3);
+  const base = new THREE.Color(color);
+  const band = new THREE.Color(0x4A463C);
+  const high = new THREE.Color(0x7A8494);
+  const shade = new THREE.Color(0x2A2E32);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getY(i);
+    const nx = x / width, nz = z / depth;
+    const h = yFn(nx, nz, height);
+    pos.setZ(i, h);
+    const t = THREE.MathUtils.clamp(h / Math.max(0.001, height), 0, 1);
+    const strata = ((Math.sin(t * 18 + nx * 6) * 0.5 + 0.5) > 0.55) ? 1 : 0;
+    const cc = base.clone()
+      .lerp(band, strata * 0.28 * (1 - t))
+      .lerp(high, t * 0.35)
+      .lerp(shade, 0.22 * (1 - t) + Math.max(0, nz) * 0.12);
+    col[i * 3] = cc.r; col[i * 3 + 1] = cc.g; col[i * 3 + 2] = cc.b;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  geo.computeVertexNormals();
+  const mat = lit
+    ? new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true })
+    : new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.castShadow = lit;
+  mesh.receiveShadow = lit;
+  return mesh;
 }
 
-/** Point hide materials at the sky PMREM so the hero actually catches light. */
-export function bindHeroEnv(root, env, intensity = 0.42) {
+/** Matte hide: the sky as a faint reflection, never a chrome balloon. */
+export function bindHeroEnv(root, env, intensity = 0.18) {
   if (!root || !env) return;
   root.traverse((o) => {
     const mats = o.isMesh ? (Array.isArray(o.material) ? o.material : [o.material]) : [];

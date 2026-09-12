@@ -3,11 +3,11 @@ export default function (THREE) {
   const g = new THREE.Group();
   const BARK = new THREE.MeshStandardMaterial({ color: 0x3A2A22, roughness: 0.93, metalness: 0 });
   BARK.name = 'timber';
-  const LEAF = new THREE.MeshStandardMaterial({ color: 0x2A5E26, roughness: 0.88, metalness: 0 });
+  const LEAF = new THREE.MeshStandardMaterial({ color: 0x3A5A2E, roughness: 0.9, metalness: 0 });
   LEAF.name = 'foliage';
-  const SUN = new THREE.MeshStandardMaterial({ color: 0x3A9A2E, roughness: 0.84, metalness: 0 });
+  const SUN = new THREE.MeshStandardMaterial({ color: 0x4A6A38, roughness: 0.88, metalness: 0 });
   SUN.name = 'foliage';
-  const SHADE = new THREE.MeshStandardMaterial({ color: 0x1A5A22, roughness: 0.9, metalness: 0 });
+  const SHADE = new THREE.MeshStandardMaterial({ color: 0x2A3E24, roughness: 0.92, metalness: 0 });
   SHADE.name = 'foliage';
   const add = (geo, m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, rz = 0) => {
     const mesh = new THREE.Mesh(geo, m);

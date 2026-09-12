@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { ASSET, bakeStatic } from './assetlib.js?v=202609121015';
-import { createRig } from './rig.js?v=202609121015';
-import { Input } from './input.js?v=202609121015';
-import { createAudio } from './audio.js?v=202609121015';
-import { applySurfaces } from './surfaces.js?v=202609121015';
-import { grassMaps, placeGrassCards, placeTreeCards, makeRidgeMesh, placeCloudCards, fbm, pastoralGrade, bindHeroEnv } from './look.js?v=202609121015';
+import { ASSET, bakeStatic } from './assetlib.js?v=202609121417';
+import { createRig } from './rig.js?v=202609121417';
+import { Input } from './input.js?v=202609121417';
+import { createAudio } from './audio.js?v=202609121417';
+import { applySurfaces } from './surfaces.js?v=202609121417';
+import { grassMaps, makeRidgeMesh, placeCloudCards, fbm, bindHeroEnv } from './look.js?v=202609121417';
 
 const canvas = document.getElementById('c');
 const loadEl = document.getElementById('load');
@@ -41,7 +41,7 @@ const BOOK = [
 const STATE = {
   running: false, over: false, score: 0, meat: 0, hide: 0, feather: 0,
   taken: new Set(), bow: 1, quiver: 24, mounted: true, sneak: false,
-  yaw: Math.PI * 0.88, pitch: 0.08, speed: 0, airborne: 0, hop: 0, gaitPhase: 0, camMode: 0,
+  yaw: Math.PI * 0.88, pitch: 0.02, speed: 0, airborne: 0, hop: 0, gaitPhase: 0, camMode: 0,
 };
 window.__GAME__ = { pos: [4, 36], fps: 60, speed: 0, score: 0, over: false, draws: 0, tris: 0 };
 window.__READY__ = false;
@@ -52,7 +52,10 @@ renderer.setSize(innerWidth, innerHeight, false);
 renderer.info.autoReset = false;
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.12, 2400);
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.12, 2400);
+const camPos = new THREE.Vector3();
+const camLook = new THREE.Vector3();
+let camInited = false;
 const input = new Input(canvas);
 const audio = createAudio();
 
@@ -83,18 +86,15 @@ function rumble(ms, mag) {
 }
 
 function groundY(x, z) {
-  const roll = Math.sin(x * 0.018) * 3.2
-    + Math.sin(z * 0.014 + 0.7) * 4.4
-    + Math.sin((x * 0.65 + z) * 0.028) * 2.2
-    + Math.sin(x * 0.045 + z * 0.036) * 1.15
-    + (fbm(x * 0.007, z * 0.007, 3) - 0.5) * 2.6;
-  const padHorse = 1 - THREE.MathUtils.smoothstep(Math.hypot(x - 4, z - 36), 7, 26);
+  const roll = Math.sin(x * 0.012) * 1.8
+    + Math.sin(z * 0.009 + 0.5) * 2.2
+    + Math.sin((x * 0.7 + z) * 0.018) * 1.1
+    + (fbm(x * 0.006, z * 0.006, 3) - 0.5) * 1.4;
+  const padHorse = 1 - THREE.MathUtils.smoothstep(Math.hypot(x - 4, z - 36), 8, 28);
   const padVillage = 1 - THREE.MathUtils.smoothstep(Math.hypot(x + 48, z - 22), 8, 22);
-  const flatten = Math.max(padHorse, padVillage) * 0.82;
-  const toward = THREE.MathUtils.smoothstep(-z, 8, 90);
-  const bowl = -toward * 11;
-  const foothill = THREE.MathUtils.smoothstep(-z, 150, 300) * 7;
-  return roll * (1 - flatten) * (1 - toward * 0.4) + bowl + foothill;
+  const flatten = Math.max(padHorse, padVillage) * 0.85;
+  const foothill = THREE.MathUtils.smoothstep(-z, 80, 240) * 5.5;
+  return roll * (1 - flatten) + foothill;
 }
 
 function pickBiome(kind) {
@@ -139,36 +139,32 @@ async function boot() {
 
   rig = createRig(THREE, renderer, scene, {
     camera,
-    hour: 10.2, azimuth: 305, elevation: 32,
+    hour: 8.5, azimuth: 300, elevation: 22,
     tier: input.wantsTouch ? 'phone' : 'high',
-    fogStart: 220, fogDensity: 0.00038, fillChroma: 2.7,
-    shadowDist: 260, sunIntensity: 12.4, exposure: 1.06,
-    wrap: 0.5, envIntensity: 0.52, envDiffuse: 0.08,
+    fogStart: 70, fogDensity: 0.00125, fillChroma: 1.55,
+    shadowDist: 220, sunIntensity: 8.6, exposure: 0.93,
+    wrap: 0.62, envIntensity: 0.32, envDiffuse: 0.08,
     cascades: input.wantsTouch ? 1 : 2,
+    bloom: false,
   });
   await rig.ready.catch(() => {});
-  if (rig.post?.composer) {
-    try {
-      const { ShaderPass } = await import('three/addons/postprocessing/ShaderPass.js');
-      rig.post.composer.addPass(new ShaderPass(pastoralGrade()));
-    } catch { /* phone / no addons */ }
-  }
 
   const dressGround = (geo, ox = 0, oz = 0) => {
     const gpos = geo.attributes.position;
     const gcol = new Float32Array(gpos.count * 3);
     const gc = new THREE.Color();
-    const hot = new THREE.Color(0x3EC12A);
-    const deep = new THREE.Color(0x1B7A24);
-    const sandC = new THREE.Color(0xD2B48C);
+    const hot = new THREE.Color(0x4A6A38);
+    const deep = new THREE.Color(0x2E4A28);
+    const earth = new THREE.Color(0x6B5340);
+    const sandC = new THREE.Color(0xC4A882);
     for (let i = 0; i < gpos.count; i++) {
       const x = gpos.getX(i) + ox, z = -gpos.getY(i) + oz;
       gpos.setZ(i, groundY(x, z));
       const sand = THREE.MathUtils.clamp((x - 155) / 70, 0, 1);
       const yHere = groundY(x, z);
-      const slope = THREE.MathUtils.clamp((yHere - groundY(x + 2.4, z)) * 0.18 + 0.5, 0, 1);
-      const mott = 0.38 + 0.32 * Math.sin(x * 0.038) * Math.cos(z * 0.032) + (1 - slope) * 0.22;
-      gc.copy(hot).lerp(deep, mott * 0.48).lerp(sandC, sand);
+      const slope = THREE.MathUtils.clamp((yHere - groundY(x + 2.4, z)) * 0.22 + 0.5, 0, 1);
+      const mott = 0.35 + 0.28 * Math.sin(x * 0.03) * Math.cos(z * 0.026);
+      gc.copy(hot).lerp(deep, mott * 0.45).lerp(earth, (1 - slope) * 0.28).lerp(sandC, sand);
       gcol[i * 3] = gc.r; gcol[i * 3 + 1] = gc.g; gcol[i * 3 + 2] = gc.b;
     }
     geo.setAttribute('color', new THREE.BufferAttribute(gcol, 3));
@@ -178,9 +174,9 @@ async function boot() {
   const ggeo = new THREE.PlaneGeometry(980, 980, 188, 188);
   dressGround(ggeo);
   const ground = new THREE.Mesh(ggeo, new THREE.MeshStandardMaterial({
-    color: 0xffffff, roughness: 0.86, metalness: 0, vertexColors: true,
+    color: 0xffffff, roughness: 0.92, metalness: 0, vertexColors: true,
     map: maps.map, roughnessMap: maps.roughnessMap, normalMap: maps.normalMap,
-    normalScale: new THREE.Vector2(1.15, 1.15),
+    normalScale: new THREE.Vector2(0.7, 0.7),
   }));
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
@@ -193,11 +189,6 @@ async function boot() {
   nearPatch.position.set(4, 0.03, 36);
   nearPatch.receiveShadow = true;
   scene.add(nearPatch);
-  const grassN = input.wantsTouch ? 900 : 1800;
-  scene.add(placeGrassCards(grassN, { x: 4, z: 36 }, 38, groundY));
-  scene.add(placeGrassCards(input.wantsTouch ? 500 : 1000, { x: 4, z: 8 }, 70, groundY, { scale: 1.15, seed: 17 }));
-  scene.add(placeTreeCards(input.wantsTouch ? 28 : 46, groundY));
-
   const sand = new THREE.Mesh(
     new THREE.CircleGeometry(90, 24),
     new THREE.MeshStandardMaterial({ color: 0xD2B48C, roughness: 0.96, metalness: 0 }),
@@ -231,11 +222,11 @@ async function boot() {
   scene.add(bakeStatic(village));
 
   const meadow = new THREE.Group();
-  for (let n = 0; n < 28; n++) {
+  for (let n = 0; n < 16; n++) {
     const side = n % 2 ? 1 : -1;
-    const x = side * (48 + Math.random() * 110);
-    const z = -70 + Math.random() * 190;
-    if (x > 170 || Math.abs(x) < 34) continue;
+    const x = side * (62 + Math.random() * 90);
+    const z = -20 + Math.random() * 140;
+    if (x > 170 || Math.abs(x) < 42) continue;
     const o = oakProto.clone(true);
     o.position.set(x, groundY(x, z), z);
     o.rotation.y = Math.random() * 6;
@@ -250,8 +241,8 @@ async function boot() {
     b.position.set(x, groundY(x, z), z);
     meadow.add(b);
   }
-  for (let n = 0; n < 110; n++) {
-    const a = Math.random() * Math.PI * 2, r = 4 + Math.random() * 90;
+  for (let n = 0; n < 36; n++) {
+    const a = Math.random() * Math.PI * 2, r = 6 + Math.random() * 70;
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
     const t = tuftProto.clone(true);
     t.position.set(x, groundY(x, z), z);
@@ -298,17 +289,17 @@ async function boot() {
     const spine = Math.pow(Math.max(0, 1 - Math.abs(nz) * 1.65), 1.3);
     return Math.max(0, (major * 0.82 + minor) * envelope * spine * height);
   };
-  const rNear = makeRidgeMesh(1400, 80, 180, 12, 52, 0x3A4E5A, ridgeFn(4.4, 0.12));
-  rNear.position.set(4, 1, -205);
-  const rMid = makeRidgeMesh(1600, 90, 170, 11, 78, 0x5A7388, ridgeFn(3.7, 0.9), { lit: false });
-  rMid.position.set(-14, 14, -295);
-  const rFar = makeRidgeMesh(1800, 100, 160, 10, 104, 0x7A96B0, ridgeFn(3.1, 1.8), { lit: false });
-  rFar.position.set(18, 26, -400);
+  const rNear = makeRidgeMesh(1320, 90, 160, 14, 58, 0x5A5A52, ridgeFn(3.6, 0.12));
+  rNear.position.set(4, 1, -220);
+  const rMid = makeRidgeMesh(1500, 100, 148, 12, 82, 0x6A7080, ridgeFn(3.1, 0.9));
+  rMid.position.set(-14, 10, -310);
+  const rFar = makeRidgeMesh(1700, 110, 136, 10, 108, 0x8A9AAA, ridgeFn(2.6, 1.8), { lit: false });
+  rFar.position.set(18, 22, -420);
   ridges.add(rNear, rMid, rFar);
   for (let i = -2; i <= 2; i++) {
     const p = peakProto.clone(true);
-    p.position.set(i * 78 + 6, 2.4, -168);
-    p.scale.set(0.48, 0.62 + Math.abs(i) * 0.07, 0.46);
+    p.position.set(i * 86 + 4, 1.2, -190);
+    p.scale.set(0.42, 0.52 + Math.abs(i) * 0.06, 0.4);
     p.rotation.y = i * 0.08;
     ridges.add(p);
   }
@@ -316,7 +307,7 @@ async function boot() {
   scene.add(bakeStatic(placeCloudCards()));
 
   const near = new THREE.Group();
-  for (let n = 0; n < 50; n++) {
+  for (let n = 0; n < 22; n++) {
     const t = tuftProto.clone(true);
     const a = Math.random() * Math.PI * 2, r = 3 + Math.random() * 28;
     const x = 8 + Math.cos(a) * r, z = 18 + Math.sin(a) * r;
@@ -328,8 +319,8 @@ async function boot() {
 
   horse.position.copy(horsePosV);
   horse.position.y = groundY(horse.position.x, horse.position.z);
-  bindHeroEnv(horse, scene.environment, 0.48);
-  bindHeroEnv(hunter, scene.environment, 0.32);
+  bindHeroEnv(horse, scene.environment, 0.16);
+  bindHeroEnv(hunter, scene.environment, 0.12);
   scene.add(horse);
   hunter.scale.setScalar(0.92);
   scene.add(hunter);
@@ -346,7 +337,7 @@ async function boot() {
 
   for (const def of BOOK) {
     const proto = animalProtos[def.id];
-    const count = def.pts >= 70 ? 1 : def.pts >= 40 ? 2 : 3;
+      const count = 1;
     for (let n = 0; n < count; n++) {
       const p = pickBiome(def.biome);
       const obj = proto.clone(true);
@@ -458,16 +449,7 @@ function moveMountedClean(dt, mv) {
     horse.position.y = groundY(horse.position.x, horse.position.z);
     tryJump(false);
   }
-  STATE.gaitPhase += STATE.speed * dt * 2.1;
-  const j = horse.userData.joints || {};
-  if (j.neck && j.neck.userData.restX == null) j.neck.userData.restX = 0.42;
-  const swing = Math.sin(STATE.gaitPhase) * Math.min(0.55, STATE.speed * 0.045);
-  if (j.fl) j.fl.rotation.x = swing;
-  if (j.fr) j.fr.rotation.x = -swing;
-  if (j.bl) j.bl.rotation.x = -swing;
-  if (j.br) j.br.rotation.x = swing;
-  if (j.body) j.body.rotation.x = Math.sin(STATE.gaitPhase * 2) * Math.min(0.04, STATE.speed * 0.003);
-  if (j.neck) j.neck.rotation.x = (j.neck.userData.restX || 0) - STATE.pitch * 0.25;
+  applyHorseGait(dt);
   if (STATE.speed > 10) {
     rumble(40, 0.18 + (STATE.speed - 10) * 0.02);
     if (Math.random() < dt * 8) spawnDust(horse.position);
@@ -503,36 +485,97 @@ function spawnDust(p) {
   dust.push({ m, t: 0.45 });
 }
 
+function applyHorseGait(dt) {
+  const j = horse.userData.joints || {};
+  const spd = STATE.speed;
+  if (j.neck && j.neck.userData.restX == null) j.neck.userData.restX = 0.38;
+  if (spd < 0.15) {
+    const idle = Math.sin(performance.now() * 0.0016) * 0.015;
+    if (j.body) j.body.rotation.x = idle;
+    if (j.neck) j.neck.rotation.x = (j.neck.userData.restX || 0.38) + idle - STATE.pitch * 0.12;
+    if (j.tail) j.tail.rotation.x = 0.18 + idle;
+    return;
+  }
+  const walk = spd < 4.6;
+  const canter = !walk && spd < 9.2;
+  STATE.gaitPhase += spd * dt * (walk ? 1.55 : canter ? 1.28 : 1.08);
+  const p = STATE.gaitPhase;
+  const amp = walk ? 0.36 : canter ? 0.46 : 0.56;
+  let fl, fr, bl, br;
+  if (walk) {
+    fl = Math.sin(p); fr = Math.sin(p + Math.PI);
+    bl = Math.sin(p + Math.PI); br = Math.sin(p);
+  } else if (canter) {
+    fl = Math.sin(p); fr = Math.sin(p + 0.65);
+    bl = Math.sin(p + Math.PI + 0.15); br = Math.sin(p + Math.PI + 0.85);
+  } else {
+    fl = Math.sin(p); fr = Math.sin(p + 0.32);
+    bl = Math.sin(p + Math.PI); br = Math.sin(p + Math.PI + 0.32);
+  }
+  const setLeg = (up, low, v) => {
+    if (up) up.rotation.x = v * amp;
+    if (low) low.rotation.x = Math.max(0, -v) * amp * 0.65;
+  };
+  setLeg(j.fl, j.flLow, fl);
+  setLeg(j.fr, j.frLow, fr);
+  setLeg(j.bl, j.blLow, bl);
+  setLeg(j.br, j.brLow, br);
+  const bob = Math.abs(Math.sin(p * (walk ? 2 : 1))) * (walk ? 0.018 : canter ? 0.04 : 0.065);
+  if (j.body) {
+    j.body.rotation.x = Math.sin(p * 2) * (walk ? 0.018 : 0.045);
+    if (j.body.userData.restY == null) j.body.userData.restY = j.body.position.y;
+    j.body.position.y = j.body.userData.restY + bob;
+  }
+  if (j.neck) j.neck.rotation.x = (j.neck.userData.restX || 0.38) + Math.sin(p * 2) * 0.055 - STATE.pitch * 0.12;
+  if (j.head) j.head.rotation.x = (j.head.userData.restX || -0.42) - Math.sin(p * 2) * 0.035;
+  if (j.tail) {
+    j.tail.rotation.x = 0.16 + Math.sin(p * 2.1) * (walk ? 0.1 : 0.22);
+    j.tail.rotation.y = Math.sin(p * 1.15) * 0.1;
+  }
+}
+
 function updateCamera() {
   const look = input.consumeLook();
   STATE.yaw += look.x;
-  STATE.pitch = THREE.MathUtils.clamp(STATE.pitch + look.y, -0.7, 0.55);
+  STATE.pitch = THREE.MathUtils.clamp(STATE.pitch + look.y, -0.55, 0.45);
   const origin = riderPos();
   const zoom = input.fireHeld || input.aimHeld;
+  const cross = document.getElementById('cross');
+  if (cross) cross.style.opacity = zoom ? '0.7' : '0';
   const phone = input.wantsTouch;
-  const cams = phone ? [
-    { back: 7.0, side: 1.35, height: 2.7 },
-    { back: 8.4, side: 0.8, height: 2.85 },
-    { back: 4.4, side: 0.25, height: 2.25 },
-  ] : [
-    { back: 5.8, side: 6.0, height: 2.05 },
-    { back: 8.2, side: 2.0, height: 2.15 },
-    { back: 4.0, side: 0.35, height: 1.85 },
+  const cams = [
+    { back: phone ? 6.8 : 7.4, side: phone ? 1.15 : 1.55, height: phone ? 2.15 : 2.05 },
+    { back: phone ? 9.0 : 10.2, side: 0.35, height: phone ? 2.45 : 2.35 },
+    { back: phone ? 4.6 : 4.8, side: phone ? 0.55 : 0.85, height: 1.72 },
   ];
   const cam = cams[STATE.camMode] || cams[0];
-  const back = STATE.mounted ? (zoom ? (phone ? 5.2 : 4.8) : cam.back) : (STATE.sneak ? 2.6 : 3.8);
-  const height = STATE.mounted ? (zoom ? (phone ? 2.15 : 1.78) : cam.height) : (STATE.sneak ? 1.25 : 1.62);
+  const back = STATE.mounted ? (zoom ? 4.6 : cam.back) : (STATE.sneak ? 2.5 : 3.6);
+  const height = STATE.mounted ? (zoom ? 1.7 : cam.height) : (STATE.sneak ? 1.22 : 1.58);
   const fx = Math.sin(STATE.yaw), fz = Math.cos(STATE.yaw);
   const rx = Math.sin(STATE.yaw + Math.PI / 2), rz = Math.cos(STATE.yaw + Math.PI / 2);
-  const side = STATE.mounted ? (zoom ? (phone ? 0.7 : 1.0) : cam.side) : 0.2;
-  const lookFwd = phone ? 12 : 16;
-  const lookY = phone ? 1.85 : 2.55;
-  camera.position.set(
-    origin.x - fx * back + rx * side,
-    origin.y + height + 0.28 - STATE.pitch * 1.2,
-    origin.z - fz * back + rz * side,
-  );
-  camera.lookAt(origin.x + fx * lookFwd, origin.y + lookY + STATE.pitch * 6.2, origin.z + fz * lookFwd);
+  const side = STATE.mounted ? (zoom ? 0.55 : cam.side) : 0.15;
+  const lookFwd = zoom ? 14 : 5.2;
+  const lookY = zoom ? 1.55 : 1.32;
+  const want = {
+    x: origin.x - fx * back + rx * side,
+    y: origin.y + height + 0.18 - STATE.pitch * 1.1,
+    z: origin.z - fz * back + rz * side,
+  };
+  const wantLook = {
+    x: origin.x + fx * lookFwd,
+    y: origin.y + lookY + STATE.pitch * 4.4,
+    z: origin.z + fz * lookFwd,
+  };
+  if (!camInited) {
+    camPos.set(want.x, want.y, want.z);
+    camLook.set(wantLook.x, wantLook.y, wantLook.z);
+    camInited = true;
+  } else {
+    camPos.lerp(want, 0.14);
+    camLook.lerp(wantLook, 0.16);
+  }
+  camera.position.copy(camPos);
+  camera.lookAt(camLook);
 }
 
 function loose() {
@@ -660,7 +703,9 @@ function hud() {
   document.getElementById('objc').textContent = STATE.mounted
     ? (STATE.speed > 10 ? 'Gallop' : STATE.speed > 5 ? 'Canter' : STATE.speed > 0.4 ? 'Walk' : 'Halted')
     : (STATE.sneak ? 'Creeping' : 'On foot');
-  document.getElementById('gait').textContent = STATE.mounted ? 'mounted' : 'on foot';
+  document.getElementById('gait').textContent = STATE.mounted
+    ? (STATE.speed > 9.2 ? 'gallop' : STATE.speed > 4.6 ? 'canter' : STATE.speed > 0.2 ? 'walk' : 'halted')
+    : 'on foot';
   document.getElementById('pack').textContent = `meat ${STATE.meat} · hide ${STATE.hide} · feather ${STATE.feather} · bow ${STATE.bow}`;
   document.getElementById('scoren').textContent = String(STATE.score);
   const mount = document.getElementById('bmount');
