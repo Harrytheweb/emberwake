@@ -1,14 +1,10 @@
 // horizon_peak — arm C: jagged extruded ridgeline, blue-grey stone, no pancake
 export default function (THREE) {
   const g = new THREE.Group();
-  const NEAR = new THREE.MeshStandardMaterial({ color: 0x6A7A78, roughness: 0.96, metalness: 0 });
-  NEAR.name = 'stone';
-  const MID = new THREE.MeshStandardMaterial({ color: 0x7A8C94, roughness: 0.94, metalness: 0 });
-  MID.name = 'stone';
-  const FAR = new THREE.MeshStandardMaterial({ color: 0x8FA3B8, roughness: 0.93, metalness: 0 });
-  FAR.name = 'stone';
-  const GRASS = new THREE.MeshStandardMaterial({ color: 0x1F7A28, roughness: 0.95, metalness: 0 });
-  GRASS.name = 'ground';
+  const NEAR = new THREE.MeshLambertMaterial({ color: 0x2E3C44 });
+  const MID = new THREE.MeshLambertMaterial({ color: 0x354858 });
+  const FAR = new THREE.MeshLambertMaterial({ color: 0x3E5468 });
+  const GRASS = new THREE.MeshLambertMaterial({ color: 0x1A5A22 });
 
   const sh = new THREE.Shape();
   sh.moveTo(-35, 0);

@@ -7,11 +7,11 @@ export default function (THREE) {
     if (name) m.name = name;
     return m;
   };
-  const HIDE = mat(0x2A1C16, 'fabric', { roughness: 0.52 });
-  const HIDE2 = mat(0x3A2A22, 'fabric', { roughness: 0.6 });
-  const RIM = mat(0x4A3728, 'fabric', { roughness: 0.5 });
-  const MANE = mat(0x12100C, 'fabric', { roughness: 0.88 });
-  const LEATH = mat(0x5A4030, 'fabric', { roughness: 0.55 });
+  const HIDE = mat(0x2A1C16, 'fabric', { roughness: 0.42, metalness: 0.08 });
+  const HIDE2 = mat(0x3A2A22, 'fabric', { roughness: 0.48, metalness: 0.06 });
+  const RIM = mat(0x4A3728, 'fabric', { roughness: 0.44 });
+  const MANE = mat(0x12100C, 'fabric', { roughness: 0.9 });
+  const LEATH = mat(0x5A4030, 'fabric', { roughness: 0.52 });
   const HOOF = mat(0x1A140E, 'stone', { roughness: 0.86 });
 
   const add = (parent, geo, m, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => {
@@ -27,43 +27,44 @@ export default function (THREE) {
   body.position.set(0, 1.16, 0);
   g.add(body);
 
-  const profile = [[0.04, -0.64], [0.20, -0.58], [0.27, -0.38], [0.28, -0.08], [0.27, 0.22], [0.24, 0.46], [0.15, 0.60], [0.05, 0.66]]
+  const profile = [[0.05, -0.62], [0.22, -0.56], [0.29, -0.34], [0.30, -0.04], [0.28, 0.24], [0.22, 0.48], [0.12, 0.58], [0.04, 0.62]]
     .map(([x, y]) => new THREE.Vector2(x, y));
-  const barrel = new THREE.LatheGeometry(profile, 14);
+  const barrel = new THREE.LatheGeometry(profile, 18);
   barrel.rotateX(Math.PI / 2);
-  add(body, barrel, HIDE, 0, 0.04, 0, 0, 0, 0, 1.05, 0.92, 1);
-  add(body, new THREE.SphereGeometry(0.22, 12, 8), HIDE, 0, 0.06, 0.58, 0, 0, 0, 1.15, 1.0, 0.9);
-  add(body, new THREE.SphereGeometry(0.24, 12, 8), HIDE2, 0, 0.08, -0.58, 0, 0, 0, 1.2, 1.05, 0.95);
-  add(body, new THREE.SphereGeometry(0.14, 10, 7), HIDE2, 0.16, 0.10, 0.38);
-  add(body, new THREE.SphereGeometry(0.14, 10, 7), HIDE2, -0.16, 0.10, 0.38);
-  add(body, new THREE.SphereGeometry(0.15, 10, 7), HIDE2, 0.17, 0.12, -0.40);
-  add(body, new THREE.SphereGeometry(0.15, 10, 7), HIDE2, -0.17, 0.12, -0.40);
-  add(body, new THREE.SphereGeometry(0.18, 10, 7), HIDE2, 0, -0.16, 0.02, 0, 0, 0, 1.2, 0.65, 1.6);
+  add(body, barrel, HIDE, 0, 0.02, 0, 0, 0, 0, 1.12, 0.98, 1.02);
+  add(body, new THREE.SphereGeometry(0.16, 10, 7), HIDE2, 0, 0.20, 0.18, 0, 0, 0, 1.15, 0.7, 0.85);
+  add(body, new THREE.SphereGeometry(0.24, 12, 8), HIDE, 0, 0.04, 0.52, 0, 0, 0, 1.18, 1.02, 0.88);
+  add(body, new THREE.SphereGeometry(0.25, 12, 8), HIDE2, 0, 0.06, -0.54, 0, 0, 0, 1.22, 1.08, 0.96);
+  add(body, new THREE.SphereGeometry(0.15, 10, 7), HIDE2, 0.17, 0.08, 0.34);
+  add(body, new THREE.SphereGeometry(0.15, 10, 7), HIDE2, -0.17, 0.08, 0.34);
+  add(body, new THREE.SphereGeometry(0.16, 10, 7), HIDE2, 0.18, 0.10, -0.36);
+  add(body, new THREE.SphereGeometry(0.16, 10, 7), HIDE2, -0.18, 0.10, -0.36);
+  add(body, new THREE.SphereGeometry(0.19, 10, 7), HIDE2, 0, -0.18, 0.02, 0, 0, 0, 1.25, 0.62, 1.55);
 
   const neck = new THREE.Group();
-  neck.position.set(0, 0.18, 0.50);
-  neck.rotation.x = 0.78;
-  neck.userData.restX = 0.78;
+  neck.position.set(0, 0.16, 0.46);
+  neck.rotation.x = 0.42;
+  neck.userData.restX = 0.42;
   body.add(neck);
-  add(neck, new THREE.CylinderGeometry(0.13, 0.20, 0.38, 12), HIDE, 0, 0.16, 0.06);
-  add(neck, new THREE.CylinderGeometry(0.11, 0.14, 0.34, 12), HIDE, 0, 0.48, 0.08);
-  add(neck, new THREE.SphereGeometry(0.13, 10, 8), HIDE, 0, 0.32, 0.07);
-  for (let i = 0; i < 6; i++) {
-    add(neck, new THREE.BoxGeometry(0.055, 0.10, 0.08), MANE, 0, 0.10 + i * 0.09, -0.07, 0.12, 0, 0);
+  add(neck, new THREE.CylinderGeometry(0.14, 0.22, 0.26, 12), HIDE, 0, 0.12, 0.04);
+  add(neck, new THREE.CylinderGeometry(0.11, 0.14, 0.22, 12), HIDE, 0, 0.32, 0.06);
+  add(neck, new THREE.SphereGeometry(0.14, 10, 8), HIDE, 0, 0.22, 0.05);
+  for (let i = 0; i < 5; i++) {
+    add(neck, new THREE.BoxGeometry(0.06, 0.11, 0.09), MANE, 0, 0.04 + i * 0.08, -0.08, 0.18, 0, 0);
   }
 
   const head = new THREE.Group();
-  head.position.set(0, 0.66, 0.12);
-  head.rotation.x = -0.70;
+  head.position.set(0, 0.44, 0.10);
+  head.rotation.x = -0.48;
   neck.add(head);
-  add(head, new THREE.SphereGeometry(0.12, 10, 8), HIDE, 0, 0.04, 0.02, 0, 0, 0, 1.05, 0.95, 1.1);
-  add(head, new THREE.BoxGeometry(0.14, 0.12, 0.28), RIM, 0, -0.01, 0.24);
-  add(head, new THREE.SphereGeometry(0.07, 8, 6), HIDE2, 0, -0.02, 0.38);
-  add(head, new THREE.BoxGeometry(0.035, 0.13, 0.045), MANE, -0.055, 0.15, -0.02, 0.18, 0, 0.15);
-  add(head, new THREE.BoxGeometry(0.035, 0.13, 0.045), MANE, 0.055, 0.15, -0.02, 0.18, 0, -0.15);
-  add(head, new THREE.CylinderGeometry(0.026, 0.03, 0.035, 6), MANE, 0, -0.02, 0.46, Math.PI / 2, 0, 0);
-  add(head, new THREE.SphereGeometry(0.02, 6, 5), HIDE2, -0.075, 0.06, 0.08);
-  add(head, new THREE.SphereGeometry(0.02, 6, 5), HIDE2, 0.075, 0.06, 0.08);
+  add(head, new THREE.SphereGeometry(0.125, 10, 8), HIDE, 0, 0.03, 0.01, 0, 0, 0, 1.08, 0.92, 1.05);
+  add(head, new THREE.BoxGeometry(0.13, 0.11, 0.22), RIM, 0, -0.02, 0.18);
+  add(head, new THREE.SphereGeometry(0.065, 8, 6), HIDE2, 0, -0.03, 0.30);
+  add(head, new THREE.BoxGeometry(0.034, 0.12, 0.042), MANE, -0.052, 0.14, -0.02, 0.16, 0, 0.14);
+  add(head, new THREE.BoxGeometry(0.034, 0.12, 0.042), MANE, 0.052, 0.14, -0.02, 0.16, 0, -0.14);
+  add(head, new THREE.CylinderGeometry(0.024, 0.028, 0.03, 6), MANE, 0, -0.02, 0.36, Math.PI / 2, 0, 0);
+  add(head, new THREE.SphereGeometry(0.02, 6, 5), HIDE2, -0.072, 0.05, 0.06);
+  add(head, new THREE.SphereGeometry(0.02, 6, 5), HIDE2, 0.072, 0.05, 0.06);
 
   const saddle = new THREE.Group();
   saddle.position.set(0, 0.30, -0.04);

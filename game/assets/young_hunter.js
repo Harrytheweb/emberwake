@@ -29,19 +29,20 @@ export default function (THREE) {
   const spine = new THREE.Group();
   spine.position.set(0, 0.10, 0);
   hips.add(spine);
-  add(spine, new THREE.BoxGeometry(0.34, 0.44, 0.20), CLOTH, 0, 0.22, 0);
-  add(spine, new THREE.SphereGeometry(0.12, 8, 6), CLOTH, 0.16, 0.34, 0);
-  add(spine, new THREE.SphereGeometry(0.12, 8, 6), CLOTH, -0.16, 0.34, 0);
-  add(spine, new THREE.BoxGeometry(0.36, 0.16, 0.22), PLATE, 0, 0.28, 0.01);
-  add(spine, new THREE.BoxGeometry(0.22, 0.08, 0.06), LEATH, 0, 0.08, 0.10);
+  add(spine, new THREE.BoxGeometry(0.32, 0.42, 0.18), CLOTH, 0, 0.22, 0);
+  add(spine, new THREE.SphereGeometry(0.14, 9, 7), CLOTH, 0.14, 0.32, 0.01);
+  add(spine, new THREE.SphereGeometry(0.14, 9, 7), CLOTH, -0.14, 0.32, 0.01);
+  add(spine, new THREE.SphereGeometry(0.12, 8, 6), CLOTH, 0, 0.18, 0.05);
+  add(spine, new THREE.BoxGeometry(0.34, 0.15, 0.20), PLATE, 0, 0.28, 0.02);
+  add(spine, new THREE.BoxGeometry(0.20, 0.07, 0.055), LEATH, 0, 0.08, 0.10);
 
   const head = new THREE.Group();
   head.position.set(0, 0.50, 0);
   spine.add(head);
-  add(head, new THREE.SphereGeometry(0.10, 8, 6), SKIN, 0, 0.09, 0.02);
-  add(head, new THREE.SphereGeometry(0.105, 8, 6), HAIR, 0, 0.13, -0.01);
+  add(head, new THREE.SphereGeometry(0.105, 9, 7), SKIN, 0, 0.09, 0.02);
+  add(head, new THREE.SphereGeometry(0.11, 9, 7), HAIR, 0, 0.125, -0.015);
   add(head, new THREE.CylinderGeometry(0.11, 0.11, 0.05, 8), CLOTH, 0, 0.18, 0.0);
-  add(head, new THREE.CylinderGeometry(0.15, 0.15, 0.018, 8), CLOTH, 0, 0.155, 0.03);
+  add(head, new THREE.CylinderGeometry(0.16, 0.16, 0.016, 8), CLOTH, 0, 0.152, 0.03);
 
   const arm = (side) => {
     const j = new THREE.Group();

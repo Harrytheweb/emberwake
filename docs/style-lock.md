@@ -12,8 +12,8 @@
 | leather | `0x4A3728` | saddle, straps, boots |
 | cloth-light | `0xE8E4DC` | rider shirt, unbleached cloth |
 | cloth-dark | `0x2C2C2E` | rider trousers, cap |
-| ridge-near | `0x6A7A78` | nearest mountain faces |
-| ridge-far | `0x8FA3B8` | distant ridges, cool stone |
+| ridge-near | `0x2A3842` | nearest mountain faces (kept dark so ACES cannot snow them) |
+| ridge-far | `0x3A5470` | distant ridges, cool stone |
 | sky | `0x4AA3E6` | sky-facing cool fill, water |
 | sand | `0xD2B48C` | beach, dune |
 

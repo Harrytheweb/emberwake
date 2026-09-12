@@ -33,6 +33,9 @@ export default function (THREE) {
   add(new THREE.SphereGeometry(0.7, 6, 5), SUN, 1.15, 5.35, -0.55, 1.05, 0.38, 0.88);
   add(new THREE.SphereGeometry(0.65, 6, 5), SHADE, -1.15, 5.4, 0.55, 1.0, 0.36, 0.82);
   add(new THREE.SphereGeometry(0.55, 6, 5), LEAF, 0.05, 4.05, 0.15, 1.2, 0.34, 1.05);
+  add(new THREE.SphereGeometry(0.62, 6, 5), SUN, 1.55, 5.55, 0.85, 0.95, 0.36, 0.8);
+  add(new THREE.SphereGeometry(0.58, 6, 5), SHADE, -1.45, 5.6, -0.85, 0.92, 0.34, 0.78);
+  add(new THREE.SphereGeometry(0.5, 6, 5), LEAF, 0.45, 6.15, 0.35, 0.88, 0.32, 0.72);
   const box = new THREE.Box3(), v = new THREE.Vector3(), m = new THREE.Matrix4(), im = new THREE.Matrix4();
   g.updateMatrixWorld(true);
   g.traverse((n) => {
