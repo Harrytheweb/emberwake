@@ -115,7 +115,7 @@ export function placeGrassCards(count, around, radius, getY, { scale = 1, seed =
   const geo = new THREE.PlaneGeometry(0.48, 0.62);
   const mat = new THREE.MeshStandardMaterial({
     map: tex, transparent: true, alphaTest: 0.26, side: THREE.DoubleSide,
-    roughness: 0.78, metalness: 0, color: 0xffffff,
+    roughness: 0.78, metalness: 0, color: 0x3EC12A,
   });
   mat.name = 'foliage';
   const inst = new THREE.InstancedMesh(geo, mat, count);
@@ -294,10 +294,10 @@ export function pastoralGrade() {
         float green = smoothstep(0.10, 0.48, col.g) * (1.0 - smoothstep(0.62, 0.96, l));
         col.g = mix(col.g, min(1.0, col.g * 1.16), green * 0.62);
         col.r = mix(col.r, col.r * 0.92, green * 0.4);
-        float sky = smoothstep(0.52, 0.90, l) * smoothstep(0.14, -0.02, col.g - col.b);
-        col.b = mix(col.b, min(1.0, col.b * 1.22), sky * 0.78);
-        col.g = mix(col.g, col.g * 0.96, sky * 0.28);
-        col.r = mix(col.r, col.r * 0.84, sky * 0.5);
+        float sky = smoothstep(0.48, 0.88, l) * smoothstep(0.18, -0.04, col.g - col.b);
+        col.b = mix(col.b, min(1.0, col.b * 1.28), sky * 0.85);
+        col.g = mix(col.g, col.g * 0.94, sky * 0.34);
+        col.r = mix(col.r, col.r * 0.78, sky * 0.58);
         vec2 c = vUv - 0.5;
         float v = smoothstep(0.94, 0.26, dot(c, c) * 2.05);
         col *= mix(1.0, v, 0.18);

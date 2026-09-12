@@ -7,8 +7,8 @@ export default function (THREE) {
     if (name) m.name = name;
     return m;
   };
-  const HIDE = mat(0x2A1C16, 'fabric', { roughness: 0.42, metalness: 0.08 });
-  const HIDE2 = mat(0x3A2A22, 'fabric', { roughness: 0.48, metalness: 0.06 });
+  const HIDE = mat(0x1A120E, 'fabric', { roughness: 0.42, metalness: 0.08 });
+  const HIDE2 = mat(0x2A1C16, 'fabric', { roughness: 0.48, metalness: 0.06 });
   const RIM = mat(0x4A3728, 'fabric', { roughness: 0.44 });
   const MANE = mat(0x12100C, 'fabric', { roughness: 0.9 });
   const LEATH = mat(0x5A4030, 'fabric', { roughness: 0.52 });
