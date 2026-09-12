@@ -4,7 +4,7 @@
   "team": ["Harrytheweb"],
   "play_url": "https://harrytheweb.github.io/emberwake/game/",
   "source_url": "https://github.com/Harrytheweb/emberwake",
-  "commit": "pending-live-verdict",
+  "commit": "6c96743da82dfb8a856ccade7a43a6044598bac5",
   "genre": "other",
   "agent": "Cursor",
   "models": ["Cursor Grok 4.6"],
