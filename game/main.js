@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { ASSET, bakeStatic } from './assetlib.js?v=202609120937';
-import { createRig } from './rig.js?v=202609120937';
-import { Input } from './input.js?v=202609120937';
-import { createAudio } from './audio.js?v=202609120937';
+import { ASSET, bakeStatic } from './assetlib.js?v=202609120955';
+import { createRig } from './rig.js?v=202609120955';
+import { Input } from './input.js?v=202609120955';
+import { createAudio } from './audio.js?v=202609120955';
 
 const canvas = document.getElementById('c');
 const loadEl = document.getElementById('load');
@@ -39,7 +39,7 @@ const BOOK = [
 const STATE = {
   running: false, over: false, score: 0, meat: 0, hide: 0, feather: 0,
   taken: new Set(), bow: 1, quiver: 24, mounted: true, sneak: false,
-  yaw: Math.PI * 0.88, pitch: 0.04, speed: 0, airborne: 0, hop: 0, gaitPhase: 0,
+  yaw: Math.PI * 0.88, pitch: 0.04, speed: 0, airborne: 0, hop: 0, gaitPhase: 0, camMode: 0,
 };
 window.__GAME__ = { pos: [4, 36], fps: 60, speed: 0, score: 0, over: false, draws: 0, tris: 0 };
 window.__READY__ = false;
@@ -405,19 +405,23 @@ function shyBoost() {
   return s;
 }
 
-function tryJump() {
-  if (!STATE.mounted || STATE.airborne > 0 || STATE.speed < 4.5) return;
+function tryJump(forced) {
+  if (!STATE.mounted || STATE.airborne > 0) return;
   const px = horse.position.x, pz = horse.position.z;
   const fx = Math.sin(STATE.yaw), fz = Math.cos(STATE.yaw);
+  let rail = false;
   for (const f of fences) {
     const dx = f.x - px, dz = f.z - pz;
     const along = dx * fx + dz * fz;
     const side = -dx * fz + dz * fx;
-    if (along > 0.4 && along < 2.6 && Math.abs(side) < 1.35) {
-      STATE.airborne = 0.62; STATE.hop = 1.15; audio.hoof(1, 14, true); rumble(90, 0.35);
-      break;
-    }
+    if (along > 0.4 && along < 2.6 && Math.abs(side) < 1.35) { rail = true; break; }
   }
+  if (!rail && !forced) return;
+  if (!forced && STATE.speed < 4.5) return;
+  STATE.airborne = 0.62;
+  STATE.hop = rail ? 1.15 : 0.82;
+  audio.hoof(1, 14, true);
+  rumble(90, 0.35);
 }
 
 function moveMountedClean(dt, mv) {
@@ -443,8 +447,7 @@ function moveMountedClean(dt, mv) {
     if (STATE.airborne <= 0) horse.position.y = groundY(horse.position.x, horse.position.z);
   } else {
     horse.position.y = groundY(horse.position.x, horse.position.z);
-    if (input.jumpTap) { tryJump(); input.jumpTap = false; }
-    else tryJump();
+    tryJump(false);
   }
   STATE.gaitPhase += STATE.speed * dt * 2.1;
   const j = horse.userData.joints || {};
@@ -496,11 +499,18 @@ function updateCamera() {
   STATE.yaw += look.x;
   STATE.pitch = THREE.MathUtils.clamp(STATE.pitch + look.y, -0.7, 0.55);
   const origin = riderPos();
-  const back = STATE.mounted ? (input.fireHeld ? 5.2 : 7.2) : (STATE.sneak ? 2.6 : 3.8);
-  const height = STATE.mounted ? 1.48 : (STATE.sneak ? 1.25 : 1.62);
+  const zoom = input.fireHeld || input.aimHeld;
+  const cams = [
+    { back: 7.2, side: 7.4, height: 1.48 },
+    { back: 9.4, side: 2.2, height: 1.72 },
+    { back: 4.5, side: 0.4, height: 1.84 },
+  ];
+  const cam = cams[STATE.camMode] || cams[0];
+  const back = STATE.mounted ? (zoom ? 5.2 : cam.back) : (STATE.sneak ? 2.6 : 3.8);
+  const height = STATE.mounted ? (zoom ? 1.72 : cam.height) : (STATE.sneak ? 1.25 : 1.62);
   const fx = Math.sin(STATE.yaw), fz = Math.cos(STATE.yaw);
   const rx = Math.sin(STATE.yaw + Math.PI / 2), rz = Math.cos(STATE.yaw + Math.PI / 2);
-  const side = STATE.mounted ? 7.4 : 0.2;
+  const side = STATE.mounted ? (zoom ? 1.1 : cam.side) : 0.2;
   camera.position.set(
     origin.x - fx * back + rx * side,
     origin.y + height + 0.32 - STATE.pitch * 1.2,
@@ -620,6 +630,15 @@ function nearStall() {
   return Math.hypot(p.x - stallPos.x, p.z - stallPos.z) < 3.4;
 }
 
+function fillBook() {
+  const el = document.getElementById('booklist');
+  if (!el) return;
+  el.innerHTML = BOOK.map((b) => {
+    const got = STATE.taken.has(b.id);
+    return `<div class="${got ? 'got' : 'no'}">${got ? '✓' : '·'} ${b.title}</div>`;
+  }).join('');
+}
+
 function hud() {
   document.getElementById('objs').textContent = `${STATE.taken.size} / 20 taken`;
   document.getElementById('objc').textContent = STATE.mounted
@@ -628,9 +647,15 @@ function hud() {
   document.getElementById('gait').textContent = STATE.mounted ? 'mounted' : 'on foot';
   document.getElementById('pack').textContent = `meat ${STATE.meat} · hide ${STATE.hide} · feather ${STATE.feather} · bow ${STATE.bow}`;
   document.getElementById('scoren').textContent = String(STATE.score);
+  const mount = document.getElementById('bmount');
+  if (mount) mount.textContent = STATE.mounted ? 'DISMOUNT' : 'MOUNT';
+  const sneakBtn = document.getElementById('bsneak');
+  if (sneakBtn) sneakBtn.classList.toggle('on', STATE.sneak);
   const shop = document.getElementById('shop');
-  if (nearStall() && !STATE.over) shop.classList.add('on');
-  else if (!shopOpen) shop.classList.remove('on');
+  if (!input.wantsTouch) {
+    if (nearStall() && !STATE.over) shop.classList.add('on');
+    else if (!shopOpen) shop.classList.remove('on');
+  }
 }
 
 function buyBow() {
@@ -684,7 +709,30 @@ function frame() {
       moveFoot(dt, mv);
       STATE.speed = Math.hypot(mv.x, mv.y) * (mv.sneak ? 1.15 : 2.85);
     }
+    if (input.jumpTap) {
+      input.jumpTap = false;
+      if (STATE.mounted) tryJump(true);
+      else toast('Mount to jump');
+    }
     if (input.fireTap) { input.fireTap = false; loose(); }
+    if (input.shopTap) {
+      input.shopTap = false;
+      if (nearStall() && !STATE.over) {
+        shopOpen = true;
+        document.getElementById('shop').classList.add('on');
+      } else toast('Ride to the village stall to trade');
+    }
+    if (input.bookTap) {
+      input.bookTap = false;
+      const book = document.getElementById('book');
+      book.classList.toggle('on');
+      fillBook();
+    }
+    if (input.camTap) {
+      input.camTap = false;
+      STATE.camMode = (STATE.camMode + 1) % 3;
+      toast(['Flank camera', 'Chase camera', 'Close camera'][STATE.camMode]);
+    }
     updateArrows(dt);
     updateAnimals(dt);
     for (let i = dust.length - 1; i >= 0; i--) {
@@ -714,7 +762,10 @@ function frame() {
 function startPlay() {
   startEl.classList.remove('on');
   hudEl.classList.add('on');
-  if (input.wantsTouch) touchEl.classList.add('on');
+  if (input.wantsTouch) {
+    touchEl.classList.add('on');
+    hudEl.classList.add('touch');
+  }
   STATE.running = true;
   audio.resume();
   input.requestLock();
@@ -729,6 +780,9 @@ document.getElementById('buybow').addEventListener('click', buyBow);
 document.getElementById('buyarr').addEventListener('click', buyArr);
 document.getElementById('closeshop').addEventListener('click', () => {
   shopOpen = false; document.getElementById('shop').classList.remove('on');
+});
+document.getElementById('closebook').addEventListener('click', () => {
+  document.getElementById('book').classList.remove('on');
 });
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;

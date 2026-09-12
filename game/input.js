@@ -1,5 +1,5 @@
 /**
- * Keyboard, pointer-lock look, and real touch on #stick / #look / buttons.
+ * Keyboard, pointer-lock look, gamepad, and real touch on #stick / #look / buttons.
  * Stick drag-up is forward so the jam hold moves the rider.
  */
 export class Input {
@@ -13,10 +13,17 @@ export class Input {
     this.mountTap = false;
     this.sneak = false;
     this.jumpTap = false;
+    this.shopTap = false;
+    this.bookTap = false;
+    this.camTap = false;
+    this.gaitLock = 0;
+    this.aimHeld = false;
+    this._gpSneak = false;
     this.locked = false;
     this.sens = 0.0020;
     this.touchSens = 0.0036;
     this.touching = false;
+    this._gpPrev = {};
     this._bindKeys();
     this._bindMouse();
     this._bindTouch();
@@ -31,10 +38,13 @@ export class Input {
       this.keys.add(e.code);
       if (e.code === 'KeyE') this.mountTap = true;
       if (e.code === 'Space') { this.jumpTap = true; e.preventDefault(); }
+      if (e.code === 'KeyF') this.shopTap = true;
+      if (e.code === 'KeyB') this.bookTap = true;
+      if (e.code === 'KeyC') this.camTap = true;
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
     }, { passive: false });
     addEventListener('keyup', (e) => this.keys.delete(e.code));
-    addEventListener('blur', () => { this.keys.clear(); this.fireHeld = false; });
+    addEventListener('blur', () => { this.keys.clear(); this.fireHeld = false; this.aimHeld = false; });
   }
 
   _bindMouse() {
@@ -61,6 +71,29 @@ export class Input {
     if (p && p.catch) p.catch(() => this.canvas.requestPointerLock());
   }
 
+  _mark(el, on) {
+    if (el) el.classList.toggle('dn', on);
+  }
+
+  _press(el, down, up) {
+    if (!el) return;
+    const start = (e) => { down(); this._mark(el, true); e.preventDefault(); };
+    const end = (e) => { up(); this._mark(el, false); if (e) e.preventDefault(); };
+    el.addEventListener('touchstart', start, { passive: false });
+    el.addEventListener('touchend', end, { passive: false });
+    el.addEventListener('touchcancel', end);
+    el.addEventListener('mousedown', start);
+    el.addEventListener('mouseup', end);
+    el.addEventListener('mouseleave', end);
+  }
+
+  _tap(el, fn) {
+    if (!el) return;
+    const fire = (e) => { fn(); this._mark(el, true); setTimeout(() => this._mark(el, false), 140); e.preventDefault(); };
+    el.addEventListener('touchstart', fire, { passive: false });
+    el.addEventListener('mousedown', fire);
+  }
+
   _bindTouch() {
     const stick = document.getElementById('stick');
     const base = document.getElementById('stickbase');
@@ -68,7 +101,6 @@ export class Input {
     const lookPad = document.getElementById('look');
     let sid = null, ox = 0, oy = 0;
     const R = 48;
-    const show = (el, on) => { if (el) el.classList.toggle('dn', on); };
 
     stick.addEventListener('touchstart', (e) => {
       const t = e.changedTouches[0];
@@ -124,15 +156,60 @@ export class Input {
       for (const t of e.changedTouches) if (t.identifier === lid) lid = null;
     });
 
-    const hold = (id, set) => {
-      const el = document.getElementById(id);
-      el.addEventListener('touchstart', (e) => { set(true); show(el, true); e.preventDefault(); }, { passive: false });
-      el.addEventListener('touchend', () => { set(false); show(el, false); });
-      el.addEventListener('touchcancel', () => { set(false); show(el, false); });
+    this._press(document.getElementById('bfire'), () => {
+      this.fireHeld = true; this.fireTap = true;
+    }, () => { this.fireHeld = false; });
+    this._press(document.getElementById('baim'), () => { this.aimHeld = true; }, () => { this.aimHeld = false; });
+    this._tap(document.getElementById('bmount'), () => { this.mountTap = true; });
+    this._tap(document.getElementById('bjump'), () => { this.jumpTap = true; });
+    this._tap(document.getElementById('bshop'), () => { this.shopTap = true; });
+    this._tap(document.getElementById('bbook'), () => { this.bookTap = true; });
+    this._tap(document.getElementById('bcam'), () => { this.camTap = true; });
+
+    const sneak = document.getElementById('bsneak');
+    this._tap(sneak, () => {
+      this.sneak = !this.sneak;
+      sneak.classList.toggle('on', this.sneak);
+    });
+
+    const setGait = (v, el) => {
+      this.gaitLock = this.gaitLock === v ? 0 : v;
+      for (const id of ['bwalk', 'bcanter', 'bgallop']) {
+        const n = document.getElementById(id);
+        if (n) n.classList.toggle('on', (id === 'bwalk' && this.gaitLock === 0.3) || (id === 'bcanter' && this.gaitLock === 0.55) || (id === 'bgallop' && this.gaitLock === 1));
+      }
     };
-    hold('bfire', (v) => { this.fireHeld = v; if (v) this.fireTap = true; });
-    hold('bmount', (v) => { if (v) this.mountTap = true; });
-    hold('bsneak', (v) => { this.sneak = v; });
+    this._tap(document.getElementById('bwalk'), () => setGait(0.3));
+    this._tap(document.getElementById('bcanter'), () => setGait(0.55));
+    this._tap(document.getElementById('bgallop'), () => setGait(1));
+  }
+
+  _gamepad() {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const gp = pads && pads[0];
+    if (!gp) return { x: 0, y: 0 };
+    const dead = (v) => Math.abs(v) < 0.18 ? 0 : v;
+    const x = dead(gp.axes[0] || 0);
+    const y = -dead(gp.axes[1] || 0);
+    const lx = dead(gp.axes[2] || 0);
+    const ly = dead(gp.axes[3] || 0);
+    if (lx) this.look.x -= lx * 0.055;
+    if (ly) this.look.y -= ly * 0.045;
+    const edge = (i) => {
+      const now = !!(gp.buttons[i] && gp.buttons[i].pressed);
+      const was = !!this._gpPrev[i];
+      this._gpPrev[i] = now;
+      return now && !was;
+    };
+    if (edge(0)) this.jumpTap = true;
+    if (edge(1)) { this._gpSneak = !this._gpSneak; this.sneak = this._gpSneak; }
+    if (edge(2)) this.fireTap = true;
+    if (edge(3)) this.mountTap = true;
+    if (edge(8)) this.bookTap = true;
+    if (edge(9)) this.shopTap = true;
+    if (gp.buttons[6] && gp.buttons[6].pressed) this.aimHeld = true;
+    if (gp.buttons[7] && gp.buttons[7].value > 0.4) { this.fireHeld = true; if (edge(7)) this.fireTap = true; }
+    return { x, y };
   }
 
   sample() {
@@ -141,11 +218,17 @@ export class Input {
     if (this.keys.has('KeyS') || this.keys.has('ArrowDown')) y -= 1;
     if (this.keys.has('KeyD') || this.keys.has('ArrowRight')) x += 1;
     if (this.keys.has('KeyA') || this.keys.has('ArrowLeft')) x -= 1;
+    const gp = this._gamepad();
+    x += gp.x; y += gp.y;
+    if (this.gaitLock > 0 && y >= -0.15) y = Math.max(y, this.gaitLock);
     const m = Math.hypot(x, y);
     if (m > 1) { x /= m; y /= m; }
-    if (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) this.sneak = true;
-    else if (!this.wantsTouch) this.sneak = this.sneak && this.touching ? this.sneak : (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight'));
-    if (!this.wantsTouch) this.sneak = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight');
+    const shift = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight');
+    if (this.wantsTouch) {
+      if (shift) this.sneak = true;
+    } else {
+      this.sneak = shift || this._gpSneak;
+    }
     return { x, y, sneak: this.sneak };
   }
 
