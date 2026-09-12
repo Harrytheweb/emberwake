@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { ASSET, bakeStatic } from './assetlib.js?v=202609121417';
-import { createRig } from './rig.js?v=202609121417';
-import { Input } from './input.js?v=202609121417';
-import { createAudio } from './audio.js?v=202609121417';
-import { applySurfaces } from './surfaces.js?v=202609121417';
-import { grassMaps, makeRidgeMesh, placeCloudCards, fbm, bindHeroEnv } from './look.js?v=202609121417';
+import { ASSET, bakeStatic } from './assetlib.js?v=202609121420';
+import { createRig } from './rig.js?v=202609121420';
+import { Input } from './input.js?v=202609121420';
+import { createAudio } from './audio.js?v=202609121420';
+import { applySurfaces } from './surfaces.js?v=202609121420';
+import { grassMaps, makeRidgeMesh, placeCloudCards, fbm, bindHeroEnv } from './look.js?v=202609121420';
 
 const canvas = document.getElementById('c');
 const loadEl = document.getElementById('load');
@@ -139,11 +139,11 @@ async function boot() {
 
   rig = createRig(THREE, renderer, scene, {
     camera,
-    hour: 8.5, azimuth: 300, elevation: 22,
+    hour: 9.4, azimuth: 298, elevation: 28,
     tier: input.wantsTouch ? 'phone' : 'high',
-    fogStart: 70, fogDensity: 0.00125, fillChroma: 1.55,
-    shadowDist: 220, sunIntensity: 8.6, exposure: 0.93,
-    wrap: 0.62, envIntensity: 0.32, envDiffuse: 0.08,
+    fogStart: 160, fogDensity: 0.00048, fillChroma: 1.7,
+    shadowDist: 220, sunIntensity: 10.2, exposure: 1.0,
+    wrap: 0.6, envIntensity: 0.34, envDiffuse: 0.08,
     cascades: input.wantsTouch ? 1 : 2,
     bloom: false,
   });
@@ -153,8 +153,8 @@ async function boot() {
     const gpos = geo.attributes.position;
     const gcol = new Float32Array(gpos.count * 3);
     const gc = new THREE.Color();
-    const hot = new THREE.Color(0x4A6A38);
-    const deep = new THREE.Color(0x2E4A28);
+    const hot = new THREE.Color(0x4A8A3A);
+    const deep = new THREE.Color(0x2F5A28);
     const earth = new THREE.Color(0x6B5340);
     const sandC = new THREE.Color(0xC4A882);
     for (let i = 0; i < gpos.count; i++) {
@@ -171,7 +171,7 @@ async function boot() {
     geo.computeVertexNormals();
   };
   const maps = grassMaps();
-  const ggeo = new THREE.PlaneGeometry(980, 980, 188, 188);
+  const ggeo = new THREE.PlaneGeometry(1400, 1400, 200, 200);
   dressGround(ggeo);
   const ground = new THREE.Mesh(ggeo, new THREE.MeshStandardMaterial({
     color: 0xffffff, roughness: 0.92, metalness: 0, vertexColors: true,
@@ -544,7 +544,7 @@ function updateCamera() {
   if (cross) cross.style.opacity = zoom ? '0.7' : '0';
   const phone = input.wantsTouch;
   const cams = [
-    { back: phone ? 6.8 : 7.4, side: phone ? 1.15 : 1.55, height: phone ? 2.15 : 2.05 },
+    { back: phone ? 6.6 : 6.8, side: phone ? 1.8 : 2.55, height: phone ? 2.05 : 1.92 },
     { back: phone ? 9.0 : 10.2, side: 0.35, height: phone ? 2.45 : 2.35 },
     { back: phone ? 4.6 : 4.8, side: phone ? 0.55 : 0.85, height: 1.72 },
   ];

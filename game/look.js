@@ -72,7 +72,7 @@ export function grassMaps() {
     } else if (dry) {
       r = 98 + blade * 20; g = 108 + blade * 18; b = 52 + blade * 8;
     } else {
-      r = 62 + blade * 16; g = 92 + blade * 28; b = 44 + blade * 8;
+      r = 52 + blade * 18; g = 118 + blade * 30; b = 46 + blade * 10;
     }
     const i = (y * size + x) * 4;
     alb[i] = r; alb[i + 1] = g; alb[i + 2] = b; alb[i + 3] = 255;

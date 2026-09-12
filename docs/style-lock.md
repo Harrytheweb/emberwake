@@ -4,8 +4,8 @@
 
 | role | hex | where it belongs |
 |---|---|---|
-| meadow-sun | `0x4A6A38` | sunlit grass |
-| meadow-shade | `0x2E4A28` | hollows |
+| meadow-sun | `0x4A8A3A` | sunlit grass |
+| meadow-shade | `0x2F5A28` | hollows |
 | earth | `0x6B5340` | soil breaks, paths |
 | dry | `0x7A6B3A` | straw, late grass |
 | leaf | `0x3A5A2E` | tree mass |
