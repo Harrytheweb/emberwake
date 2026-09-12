@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>First Light Hunt</title>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+} }
+</script>
+<link rel="icon" href="data:,">
+<style>
+  :root { --gold:#F0C27B; --leaf:#7EC850; --deep:#2D5A27; --sky:#87CEEB; --bark:#4A3728; --sand:#E8A87C; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; padding:0; height:100%; overflow:hidden; background:#1a2430;
+    font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif; color:#f3ead6; }
+  canvas { display:block; width:100%; height:100%; touch-action:none; }
+  #ui { position:fixed; inset:0; pointer-events:none; z-index:10; }
+  .pe { pointer-events:auto; }
+
+  #load { position:fixed; inset:0; z-index:40; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:16px;
+    background:radial-gradient(ellipse at 50% 40%, #3a4a38, #121820); }
+  #load h1 { margin:0; font-weight:600; letter-spacing:.18em; font-size:clamp(22px,5.4vw,40px); color:var(--gold); }
+  #load .sub { letter-spacing:.32em; font-size:11px; color:#c2b280; text-transform:uppercase; }
+  #bar { width:min(340px,62vw); height:3px; background:#2a3328; }
+  #barf { height:100%; width:0; background:var(--gold); }
+  #loadmsg { font-size:12px; color:#9aa58c; min-height:16px; }
+
+  .screen { position:fixed; inset:0; z-index:35; display:none; flex-direction:column;
+    align-items:center; justify-content:center; gap:18px; text-align:center;
+    background:radial-gradient(ellipse at 50% 42%, rgba(42,52,36,.72), rgba(12,16,20,.92)); padding:24px; }
+  .screen.on { display:flex; }
+  .screen h2 { margin:0; letter-spacing:.2em; font-size:clamp(22px,5vw,38px); color:var(--gold); font-weight:600; }
+  .screen p { margin:0; max-width:min(520px,88vw); line-height:1.7; color:#d7d0be; font-size:15px; }
+  .btn { padding:14px 36px; border:1px solid var(--gold); background:rgba(74,55,40,.55);
+    color:var(--gold); font:inherit; letter-spacing:.2em; cursor:pointer; }
+  .btn:hover { background:rgba(240,194,123,.18); }
+
+  #hud { display:none; position:fixed; inset:0; z-index:12; }
+  #hud.on { display:block; }
+  #obj { position:absolute; left:0; right:0; top:max(14px,env(safe-area-inset-top));
+    text-align:center; text-shadow:0 2px 8px #000; }
+  #obj .t { font-size:11px; letter-spacing:.28em; color:var(--gold); }
+  #obj .s { font-size:20px; margin-top:3px; }
+  #obj .c { font-size:12px; color:#c9c2ae; margin-top:2px; }
+  #vitals { position:absolute; left:max(16px,env(safe-area-inset-left)); bottom:max(16px,env(safe-area-inset-bottom));
+    text-shadow:0 2px 6px #000; font-size:13px; line-height:1.55; }
+  #ammo { position:absolute; right:max(16px,env(safe-area-inset-right)); bottom:max(16px,env(safe-area-inset-bottom));
+    text-align:right; text-shadow:0 2px 6px #000; }
+  #ammo .n { font-size:28px; color:var(--gold); }
+  #cross { position:absolute; left:50%; top:48%; width:18px; height:18px; margin:-9px 0 0 -9px; opacity:.75; }
+  #cross i { position:absolute; background:#f3ead6; }
+  #cross i.h { height:1px; width:6px; top:8.5px; } #cross i.l { left:0 } #cross i.r { right:0 }
+  #cross i.v { width:1px; height:6px; left:8.5px; } #cross i.t { top:0 } #cross i.b { bottom:0 }
+  #toast { position:absolute; left:0; right:0; top:38%; text-align:center; letter-spacing:.12em;
+    color:var(--gold); opacity:0; text-shadow:0 2px 10px #000; transition:opacity .25s; }
+  #shop { position:absolute; left:50%; bottom:22%; transform:translateX(-50%); display:none;
+    pointer-events:auto; background:rgba(26,24,18,.82); border:1px solid var(--gold); padding:12px 16px;
+    min-width:260px; text-align:left; font-size:14px; }
+  #shop.on { display:block; }
+  #shop button { display:block; width:100%; margin:6px 0; padding:8px; font:inherit; cursor:pointer;
+    background:rgba(240,194,123,.12); color:var(--gold); border:1px solid #c2b280; }
+  #touch { position:fixed; inset:0; z-index:14; display:none; }
+  #touch.on { display:block; }
+  .tpad { position:absolute; }
+  #stick { left:0; bottom:0; width:46%; height:52%; }
+  #stickbase { position:absolute; width:108px; height:108px; margin:-54px 0 0 -54px; border-radius:50%;
+    border:1.5px solid rgba(240,194,123,.35); opacity:0; }
+  #sticknub { position:absolute; width:48px; height:48px; margin:-24px 0 0 -24px; border-radius:50%;
+    background:rgba(240,194,123,.22); border:1.5px solid rgba(240,194,123,.5); opacity:0; }
+  #look { right:0; top:0; width:54%; height:100%; }
+  .tbtn { position:absolute; border-radius:50%; border:1.5px solid rgba(240,194,123,.4);
+    background:rgba(20,24,18,.4); display:flex; align-items:center; justify-content:center;
+    font-size:10px; letter-spacing:.12em; color:#f3ead6; user-select:none; }
+  .tbtn.dn { background:rgba(126,200,80,.28); border-color:var(--leaf); }
+  #bfire { right:max(16px,env(safe-area-inset-right)); bottom:24%; width:88px; height:88px; }
+  #bmount { right:max(110px,calc(env(safe-area-inset-right) + 110px)); bottom:16%; width:64px; height:64px; }
+  #bsneak { left:max(18px,env(safe-area-inset-left)); bottom:24%; width:62px; height:62px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="load">
+  <h1>FIRST LIGHT HUNT</h1>
+  <div class="sub">Open country · dawn</div>
+  <div id="bar"><div id="barf"></div></div>
+  <div id="loadmsg">waking the meadow</div>
+</div>
+<div id="ui">
+  <div id="hud">
+    <div id="obj">
+      <div class="t">THE BOOK</div>
+      <div class="s" id="objs">0 / 20 taken</div>
+      <div class="c" id="objc">Ride. Loose. Trade. Complete the set.</div>
+    </div>
+    <div id="cross"><i class="h l"></i><i class="h r"></i><i class="v t"></i><i class="v b"></i></div>
+    <div id="vitals">
+      <div id="gait">on foot</div>
+      <div id="pack">meat 0 · hide 0 · feather 0</div>
+    </div>
+    <div id="ammo"><div class="n" id="scoren">0</div><div>points</div></div>
+    <div id="toast"></div>
+    <div id="shop">
+      <div>Village stall</div>
+      <button class="pe" id="buybow">Bow + (40 meat, 20 hide)</button>
+      <button class="pe" id="buyarr">Quiver + (15 meat, 10 feather)</button>
+      <button class="pe" id="closeshop">Leave</button>
+    </div>
+  </div>
+</div>
+<div id="touch">
+  <div class="tpad pe" id="stick"><div id="stickbase"></div><div id="sticknub"></div></div>
+  <div class="tpad pe" id="look"></div>
+  <div class="tbtn pe" id="bfire">LOOSE</div>
+  <div class="tbtn pe" id="bmount">MOUNT</div>
+  <div class="tbtn pe" id="bsneak">CREEP</div>
+</div>
+<div class="screen" id="start">
+  <h2>FIRST LIGHT HUNT</h2>
+  <p>Twenty animals live in this country. Ride the gold into the blue, take one of each, and the book is full. Walk, mount, gallop, jump the rails. Loose from the saddle, or creep on foot when the shy ones listen.</p>
+  <p style="font-size:13px;color:#c2b280">WASD · mouse look · E mount · click loose · Shift creep · Space jump<br>Stick · look pad · LOOSE · MOUNT · CREEP</p>
+  <button class="btn pe" id="startb">RIDE</button>
+</div>
+<div class="screen" id="over">
+  <h2>THE BOOK IS FULL</h2>
+  <p id="overp">Every mark is taken. The country keeps its dawn.</p>
+  <button class="btn pe" id="overb">RIDE AGAIN</button>
+</div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
