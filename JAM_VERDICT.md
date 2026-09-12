@@ -24,4 +24,4 @@ RESULT: PASS
 === END ===
 ```
 
-The pastoral look pass after this block is a `game/` change at the same play URL. Re-run the live gate once Pages has the new `main` sha.
+The pastoral look and density passes after this block are `game/` changes at the same play URL. Re-run the live gate once Pages has `f7e9349382c64aa19d2416142aa885f93936e6e0`. Local software-renderer checks: 593 draws / 404k tris desktop, 338 draws / 284k tris phone, stick drag 1.72 m, all 13 labelled controls visible with no overlaps.
