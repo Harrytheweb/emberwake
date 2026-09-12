@@ -1,8 +1,10 @@
 import * as THREE from 'three';
-import { ASSET, bakeStatic } from './assetlib.js?v=202609120955';
-import { createRig } from './rig.js?v=202609120955';
-import { Input } from './input.js?v=202609120955';
-import { createAudio } from './audio.js?v=202609120955';
+import { ASSET, bakeStatic } from './assetlib.js?v=202609121001';
+import { createRig } from './rig.js?v=202609121001';
+import { Input } from './input.js?v=202609121001';
+import { createAudio } from './audio.js?v=202609121001';
+import { applySurfaces } from './surfaces.js?v=202609121001';
+import { grassMaps, placeGrassCards, makeRidgeMesh, placeCloudCards, fbm } from './look.js?v=202609121001';
 
 const canvas = document.getElementById('c');
 const loadEl = document.getElementById('load');
@@ -91,25 +93,6 @@ function groundY(x, z) {
   return roll * flatten + rise;
 }
 
-function grassMap() {
-  const c = document.createElement('canvas');
-  c.width = c.height = 256;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#2db024';
-  ctx.fillRect(0, 0, 256, 256);
-  for (let i = 0; i < 5200; i++) {
-    const x = Math.random() * 256, y = Math.random() * 256;
-    ctx.fillStyle = i % 4 === 0 ? '#1a6e20' : (i % 3 === 0 ? '#4ad034' : '#24941f');
-    ctx.fillRect(x, y, 1 + (i % 2), 2 + (i % 3));
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(92, 92);
-  t.anisotropy = 4;
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
-
 function pickBiome(kind) {
   if (kind === 'shore') return { x: 170 + Math.random() * 40, z: -40 + Math.random() * 90 };
   if (kind === 'wood') return { x: -40 + Math.random() * 50, z: 40 + Math.random() * 70 };
@@ -120,18 +103,18 @@ function pickBiome(kind) {
 async function boot() {
   const jobs = [
     ['./assets/riding_horse.js', { keepHierarchy: true, surfaces: true }],
-    ['./assets/young_hunter.js', { keepHierarchy: true }],
-    ['./assets/hunting_bow.js', {}],
+    ['./assets/young_hunter.js', { keepHierarchy: true, surfaces: true }],
+    ['./assets/hunting_bow.js', { surfaces: true }],
     ['./assets/village_cottage.js', { surfaces: true }],
     ['./assets/shop_stall.js', { surfaces: true }],
     ['./assets/meadow_oak.js', { surfaces: true }],
     ['./assets/meadow_bush.js', { surfaces: true }],
     ['./assets/fence_bay.js', { surfaces: true }],
-    ['./assets/grass_tuft.js', {}],
-    ['./assets/horizon_peak.js', {}],
+    ['./assets/grass_tuft.js', { surfaces: true }],
+    ['./assets/horizon_peak.js', { surfaces: true }],
     ['./assets/dune_rise.js', { surfaces: true }],
     ['./assets/cloud_puff.js', {}],
-    ...BOOK.map((b) => [b.file, {}]),
+    ...BOOK.map((b) => [b.file, { surfaces: true }]),
   ];
   let done = 0;
   const loaded = await Promise.all(jobs.map(async ([url, opts]) => {
@@ -151,40 +134,52 @@ async function boot() {
   for (const b of BOOK) animalProtos[b.id] = loaded[i++];
 
   rig = createRig(THREE, renderer, scene, {
-    hour: 10.6, azimuth: 298, elevation: 40,
+    hour: 10.2, azimuth: 300, elevation: 34,
     tier: input.wantsTouch ? 'phone' : 'high',
-    fogStart: 240, fogDensity: 0.00038, fillChroma: 2.2,
-    shadowDist: 220, sunIntensity: 11.2, exposure: 0.86,
+    fogStart: 150, fogDensity: 0.00055, fillChroma: 2.4,
+    shadowDist: 240, sunIntensity: 15.6, exposure: 0.96,
     cascades: input.wantsTouch ? 1 : 2,
   });
   await rig.ready.catch(() => {});
 
-  const ggeo = new THREE.PlaneGeometry(860, 860, 148, 148);
-  const gpos = ggeo.attributes.position;
-  const gcol = new Float32Array(gpos.count * 3);
-  const gc = new THREE.Color();
-    const hot = new THREE.Color(0x2ED426);
-  const deep = new THREE.Color(0x178A22);
-  const sandC = new THREE.Color(0xD2B48C);
-  for (let i = 0; i < gpos.count; i++) {
-    const x = gpos.getX(i), z = -gpos.getY(i);
-    gpos.setZ(i, groundY(x, z));
-    const sand = THREE.MathUtils.clamp((x - 155) / 70, 0, 1);
-    const mott = 0.5 + 0.22 * Math.sin(x * 0.055) * Math.cos(z * 0.048);
-    gc.copy(hot).lerp(deep, mott * 0.38).lerp(sandC, sand);
-    gcol[i * 3] = gc.r; gcol[i * 3 + 1] = gc.g; gcol[i * 3 + 2] = gc.b;
-  }
-  ggeo.setAttribute('color', new THREE.BufferAttribute(gcol, 3));
-  ggeo.computeVertexNormals();
-  const gtex = grassMap();
+  const dressGround = (geo, ox = 0, oz = 0) => {
+    const gpos = geo.attributes.position;
+    const gcol = new Float32Array(gpos.count * 3);
+    const gc = new THREE.Color();
+    const hot = new THREE.Color(0x3EC12A);
+    const deep = new THREE.Color(0x1B7A24);
+    const sandC = new THREE.Color(0xD2B48C);
+    for (let i = 0; i < gpos.count; i++) {
+      const x = gpos.getX(i) + ox, z = -gpos.getY(i) + oz;
+      gpos.setZ(i, groundY(x, z));
+      const sand = THREE.MathUtils.clamp((x - 155) / 70, 0, 1);
+      const mott = 0.42 + 0.28 * Math.sin(x * 0.04) * Math.cos(z * 0.035);
+      gc.copy(hot).lerp(deep, mott * 0.42).lerp(sandC, sand);
+      gcol[i * 3] = gc.r; gcol[i * 3 + 1] = gc.g; gcol[i * 3 + 2] = gc.b;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(gcol, 3));
+    geo.computeVertexNormals();
+  };
+  const maps = grassMaps();
+  const ggeo = new THREE.PlaneGeometry(920, 920, 172, 172);
+  dressGround(ggeo);
   const ground = new THREE.Mesh(ggeo, new THREE.MeshStandardMaterial({
-    color: 0xffffff, roughness: 0.9, metalness: 0, vertexColors: true,
-    map: gtex,
+    color: 0xffffff, roughness: 0.86, metalness: 0, vertexColors: true,
+    map: maps.map, roughnessMap: maps.roughnessMap, normalMap: maps.normalMap,
+    normalScale: new THREE.Vector2(1.15, 1.15),
   }));
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   ground.material.name = 'ground';
   scene.add(ground);
+  const ngeo = new THREE.PlaneGeometry(96, 96, 80, 80);
+  dressGround(ngeo, 4, 36);
+  const nearPatch = new THREE.Mesh(ngeo, ground.material);
+  nearPatch.rotation.x = -Math.PI / 2;
+  nearPatch.position.set(4, 0.03, 36);
+  nearPatch.receiveShadow = true;
+  scene.add(nearPatch);
+  scene.add(placeGrassCards(input.wantsTouch ? 700 : 1400, { x: 4, z: 36 }, 42, groundY));
 
   const sand = new THREE.Mesh(
     new THREE.CircleGeometry(90, 24),
@@ -193,6 +188,7 @@ async function boot() {
   sand.rotation.x = -Math.PI / 2;
   sand.position.set(210, 0.02, 20);
   sand.material.name = 'ground';
+  applySurfaces(THREE, sand);
   scene.add(sand);
 
   const sea = new THREE.Mesh(
@@ -277,36 +273,31 @@ async function boot() {
   }
   scene.add(bakeStatic(dunes));
 
-  const peaks = new THREE.Group();
-  const cool = new THREE.Color(0xA7B8CC);
-  const ridge = (x, z, sx, sy, sz, ry, fade) => {
-    const p = peakProto.clone(true);
-    p.position.set(x, Math.max(0, groundY(x, z) * 0.08), z);
-    p.scale.set(sx, sy, sz);
-    p.rotation.y = ry;
-    if (fade > 0.02) {
-      p.traverse((n) => {
-        if (!n.material) return;
-        n.material = n.material.clone();
-        n.material.color.lerp(cool, fade);
-      });
-    }
-    peaks.add(p);
+  const ridges = new THREE.Group();
+  const ridgeFn = (freq, seed) => (nx, nz, height) => {
+    const swell = 0.55 + 0.45 * Math.sin((nx * freq + seed) * Math.PI);
+    const roll = fbm(nx * 4.5 + seed, nz * 3.2, 4);
+    const jag = swell * 0.62 + roll * 0.5;
+    const envelope = Math.pow(Math.max(0, 1 - Math.abs(nx) * 1.05), 1.05);
+    const depth = 0.32 + (0.45 - nz) * 0.7;
+    return Math.max(0, jag * envelope * depth * height);
   };
-  for (let i = -5; i <= 5; i++) ridge(i * 46 + (i % 2 ? 8 : -4), -300, 1.45, 1.85 + (i % 3) * 0.2, 1.25, i * 0.05, 0.06);
-  for (let i = -6; i <= 5; i++) ridge(i * 52 + 14, -410, 1.85, 2.45 + Math.abs(i % 4) * 0.18, 1.5, -i * 0.04, 0.3);
-  for (let i = -6; i <= 6; i++) ridge(i * 60 - 10, -540, 2.2, 3.2 + (i % 2) * 0.35, 1.7, i * 0.03, 0.5);
-  for (let i = -5; i <= 5; i++) ridge(i * 72 + 20, -700, 2.55, 3.9, 1.9, -i * 0.02, 0.68);
-  scene.add(bakeStatic(peaks));
-
-  const clouds = new THREE.Group();
-  for (let n = 0; n < 6; n++) {
-    const c = cloudProto.clone(true);
-    c.position.set(-240 + n * 78 + (n % 2) * 20, 110 + (n % 3) * 22, -300 - (n % 4) * 70);
-    c.scale.set(6.8 + (n % 3) * 1.8, 4.2, 5.5 + (n % 2) * 1.2);
-    clouds.add(c);
+  const rNear = makeRidgeMesh(720, 120, 120, 22, 44, 0x3E4E4C, ridgeFn(5.2, 0.2));
+  rNear.position.set(8, 1.2, -290);
+  const rMid = makeRidgeMesh(820, 140, 110, 20, 58, 0x4A5E6A, ridgeFn(5.8, 1.1));
+  rMid.position.set(-16, 4, -410);
+  const rFar = makeRidgeMesh(960, 160, 100, 18, 72, 0x5A7088, ridgeFn(6.4, 2.4));
+  rFar.position.set(20, 8, -560);
+  ridges.add(rNear, rMid, rFar);
+  for (let i = -3; i <= 3; i++) {
+    const p = peakProto.clone(true);
+    p.position.set(i * 70 + 10, 0.4, -250);
+    p.scale.set(0.55, 0.7 + Math.abs(i) * 0.08, 0.5);
+    p.rotation.y = i * 0.08;
+    ridges.add(p);
   }
-  scene.add(bakeStatic(clouds));
+  scene.add(bakeStatic(ridges));
+  scene.add(bakeStatic(placeCloudCards()));
 
   const near = new THREE.Group();
   for (let n = 0; n < 50; n++) {
@@ -451,7 +442,7 @@ function moveMountedClean(dt, mv) {
   }
   STATE.gaitPhase += STATE.speed * dt * 2.1;
   const j = horse.userData.joints || {};
-  if (j.neck && j.neck.userData.restX == null) j.neck.userData.restX = 0.82;
+  if (j.neck && j.neck.userData.restX == null) j.neck.userData.restX = 0.78;
   const swing = Math.sin(STATE.gaitPhase) * Math.min(0.55, STATE.speed * 0.045);
   if (j.fl) j.fl.rotation.x = swing;
   if (j.fr) j.fr.rotation.x = -swing;
@@ -501,7 +492,7 @@ function updateCamera() {
   const origin = riderPos();
   const zoom = input.fireHeld || input.aimHeld;
   const cams = [
-    { back: 7.2, side: 7.4, height: 1.48 },
+    { back: 6.2, side: 6.6, height: 1.42 },
     { back: 9.4, side: 2.2, height: 1.72 },
     { back: 4.5, side: 0.4, height: 1.84 },
   ];

@@ -8,4 +8,4 @@ Hero objects used three construction arms. Winners, picked for silhouette and pa
 
 Animals share a quadruped or bird kit with different proportions, antlers, tusks and stance so the book of twenty stays distinct without twenty unique generators. Shore birds and the heron use the bird kit; aurochs, elk and stag carry bone.
 
-Ground coupling and two temperatures come from `rig.js` at hour 10.6 / elevation 40 (blue sky, hard key). Three.js `smoothstep` is `(x, min, max)` — the first meadow used GLSL argument order and baked a perfectly flat plane.
+Ground coupling and two temperatures come from `rig.js` at hour 10.2 / elevation 34. Three.js `smoothstep` is `(x, min, max)` — the first meadow used GLSL argument order and baked a perfectly flat plane. Quality jump uses recipe surfaces, cutout grass cards, a lathed horse, and displaced ridge meshes — technique from the recipe, not copied reference games.

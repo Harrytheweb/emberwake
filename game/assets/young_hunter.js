@@ -29,8 +29,10 @@ export default function (THREE) {
   const spine = new THREE.Group();
   spine.position.set(0, 0.10, 0);
   hips.add(spine);
-  add(spine, new THREE.BoxGeometry(0.32, 0.42, 0.18), CLOTH, 0, 0.22, 0);
-  add(spine, new THREE.BoxGeometry(0.34, 0.16, 0.20), PLATE, 0, 0.28, 0.01);
+  add(spine, new THREE.BoxGeometry(0.34, 0.44, 0.20), CLOTH, 0, 0.22, 0);
+  add(spine, new THREE.SphereGeometry(0.12, 8, 6), CLOTH, 0.16, 0.34, 0);
+  add(spine, new THREE.SphereGeometry(0.12, 8, 6), CLOTH, -0.16, 0.34, 0);
+  add(spine, new THREE.BoxGeometry(0.36, 0.16, 0.22), PLATE, 0, 0.28, 0.01);
   add(spine, new THREE.BoxGeometry(0.22, 0.08, 0.06), LEATH, 0, 0.08, 0.10);
 
   const head = new THREE.Group();
