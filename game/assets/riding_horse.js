@@ -36,8 +36,8 @@ export default function (THREE) {
 
   const neck = new THREE.Group();
   neck.position.set(0, 0.16, 0.52);
-  neck.rotation.x = 0.62;
-  neck.userData.restX = 0.62;
+  neck.rotation.x = 0.82;
+  neck.userData.restX = 0.82;
   body.add(neck);
   add(neck, new THREE.CylinderGeometry(0.145, 0.20, 0.64, 10), HIDE, 0, 0.28, 0.08);
   add(neck, new THREE.CylinderGeometry(0.12, 0.145, 0.30, 8), HIDE, 0, 0.56, 0.10);

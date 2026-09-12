@@ -39,7 +39,7 @@ const BOOK = [
 const STATE = {
   running: false, over: false, score: 0, meat: 0, hide: 0, feather: 0,
   taken: new Set(), bow: 1, quiver: 24, mounted: true, sneak: false,
-  yaw: Math.PI * 0.94, pitch: 0.05, speed: 0, airborne: 0, hop: 0, gaitPhase: 0,
+  yaw: Math.PI * 0.88, pitch: 0.04, speed: 0, airborne: 0, hop: 0, gaitPhase: 0,
 };
 window.__GAME__ = { pos: [4, 36], fps: 60, speed: 0, score: 0, over: false, draws: 0, tris: 0 };
 window.__READY__ = false;
@@ -82,12 +82,12 @@ function rumble(ms, mag) {
 
 function groundY(x, z) {
   const d = Math.hypot(x, z);
-  const flatten = THREE.MathUtils.smoothstep(d, 14, 95);
-  const roll = Math.sin(x * 0.007) * 3.4
-    + Math.sin(z * 0.0052 + 0.6) * 5.2
-    + Math.sin((x * 0.9 + z) * 0.011) * 1.8
-    + Math.sin(x * 0.024 + z * 0.018) * 0.85;
-  const rise = THREE.MathUtils.smoothstep(-z, 30, 240) * 6.5;
+  const flatten = THREE.MathUtils.smoothstep(d, 10, 70);
+  const roll = Math.sin(x * 0.006) * 4.6
+    + Math.sin(z * 0.0044 + 0.6) * 7.4
+    + Math.sin((x * 0.9 + z) * 0.01) * 2.4
+    + Math.sin(x * 0.02 + z * 0.016) * 1.1;
+  const rise = THREE.MathUtils.smoothstep(-z, 8, 220) * 9.5;
   return roll * flatten + rise;
 }
 
@@ -151,10 +151,10 @@ async function boot() {
   for (const b of BOOK) animalProtos[b.id] = loaded[i++];
 
   rig = createRig(THREE, renderer, scene, {
-    hour: 10.15, azimuth: 312, maxElevation: 40,
+    hour: 10.6, azimuth: 298, elevation: 40,
     tier: input.wantsTouch ? 'phone' : 'high',
-    fogStart: 90, fogDensity: 0.00115, fillChroma: 2.05,
-    shadowDist: 200, sunIntensity: 9.2, exposure: 1.02,
+    fogStart: 240, fogDensity: 0.00038, fillChroma: 2.2,
+    shadowDist: 220, sunIntensity: 11.2, exposure: 0.86,
     cascades: input.wantsTouch ? 1 : 2,
   });
   await rig.ready.catch(() => {});
@@ -163,8 +163,8 @@ async function boot() {
   const gpos = ggeo.attributes.position;
   const gcol = new Float32Array(gpos.count * 3);
   const gc = new THREE.Color();
-  const hot = new THREE.Color(0x36C428);
-  const deep = new THREE.Color(0x1B7A24);
+    const hot = new THREE.Color(0x2ED426);
+  const deep = new THREE.Color(0x178A22);
   const sandC = new THREE.Color(0xD2B48C);
   for (let i = 0; i < gpos.count; i++) {
     const x = gpos.getX(i), z = -gpos.getY(i);
@@ -263,7 +263,7 @@ async function boot() {
       fences.push({ x: f.position.x, z: f.position.z, yaw, half: 1.2 });
     }
   };
-  line(16, 8, 40, 8); line(40, 8, 40, -18); line(-22, 16, -4, 16);
+  line(72, 48, 98, 48); line(98, 48, 98, 22); line(-78, 56, -54, 56);
   scene.add(bakeStatic(rails));
 
   const dunes = new THREE.Group();
@@ -293,16 +293,17 @@ async function boot() {
     }
     peaks.add(p);
   };
-  for (let i = -4; i <= 4; i++) ridge(i * 52, -268, 1.7, 2.05, 1.55, i * 0.04, 0.08);
-  for (let i = -5; i <= 5; i++) ridge(i * 58 + 16, -390, 2.15, 2.55, 1.8, -i * 0.03, 0.38);
-  for (let i = -5; i <= 4; i++) ridge(i * 70 - 8, -540, 2.6, 3.15, 2.1, i * 0.025, 0.62);
+  for (let i = -5; i <= 5; i++) ridge(i * 46 + (i % 2 ? 8 : -4), -300, 1.45, 1.85 + (i % 3) * 0.2, 1.25, i * 0.05, 0.06);
+  for (let i = -6; i <= 5; i++) ridge(i * 52 + 14, -410, 1.85, 2.45 + Math.abs(i % 4) * 0.18, 1.5, -i * 0.04, 0.3);
+  for (let i = -6; i <= 6; i++) ridge(i * 60 - 10, -540, 2.2, 3.2 + (i % 2) * 0.35, 1.7, i * 0.03, 0.5);
+  for (let i = -5; i <= 5; i++) ridge(i * 72 + 20, -700, 2.55, 3.9, 1.9, -i * 0.02, 0.68);
   scene.add(bakeStatic(peaks));
 
   const clouds = new THREE.Group();
-  for (let n = 0; n < 8; n++) {
+  for (let n = 0; n < 6; n++) {
     const c = cloudProto.clone(true);
-    c.position.set(-220 + n * 62 + Math.random() * 18, 88 + (n % 3) * 16, -240 - Math.random() * 200);
-    c.scale.setScalar(5.4 + (n % 4) * 1.6);
+    c.position.set(-240 + n * 78 + (n % 2) * 20, 110 + (n % 3) * 22, -300 - (n % 4) * 70);
+    c.scale.set(6.8 + (n % 3) * 1.8, 4.2, 5.5 + (n % 2) * 1.2);
     clouds.add(c);
   }
   scene.add(bakeStatic(clouds));
@@ -447,7 +448,7 @@ function moveMountedClean(dt, mv) {
   }
   STATE.gaitPhase += STATE.speed * dt * 2.1;
   const j = horse.userData.joints || {};
-  if (j.neck && j.neck.userData.restX == null) j.neck.userData.restX = 0.62;
+  if (j.neck && j.neck.userData.restX == null) j.neck.userData.restX = 0.82;
   const swing = Math.sin(STATE.gaitPhase) * Math.min(0.55, STATE.speed * 0.045);
   if (j.fl) j.fl.rotation.x = swing;
   if (j.fr) j.fr.rotation.x = -swing;
@@ -495,17 +496,17 @@ function updateCamera() {
   STATE.yaw += look.x;
   STATE.pitch = THREE.MathUtils.clamp(STATE.pitch + look.y, -0.7, 0.55);
   const origin = riderPos();
-  const back = STATE.mounted ? (input.fireHeld ? 5.4 : 10.4) : (STATE.sneak ? 2.6 : 3.8);
-  const height = STATE.mounted ? 1.58 : (STATE.sneak ? 1.25 : 1.62);
+  const back = STATE.mounted ? (input.fireHeld ? 5.2 : 7.2) : (STATE.sneak ? 2.6 : 3.8);
+  const height = STATE.mounted ? 1.48 : (STATE.sneak ? 1.25 : 1.62);
   const fx = Math.sin(STATE.yaw), fz = Math.cos(STATE.yaw);
   const rx = Math.sin(STATE.yaw + Math.PI / 2), rz = Math.cos(STATE.yaw + Math.PI / 2);
-  const side = STATE.mounted ? 4.8 : 0.2;
+  const side = STATE.mounted ? 7.4 : 0.2;
   camera.position.set(
     origin.x - fx * back + rx * side,
-    origin.y + height + 0.42 - STATE.pitch * 1.4,
+    origin.y + height + 0.32 - STATE.pitch * 1.2,
     origin.z - fz * back + rz * side,
   );
-  camera.lookAt(origin.x + fx * 9, origin.y + 1.02 + STATE.pitch * 5.4, origin.z + fz * 9);
+  camera.lookAt(origin.x + fx * 14, origin.y + 1.35 + STATE.pitch * 5.2, origin.z + fz * 14);
 }
 
 function loose() {

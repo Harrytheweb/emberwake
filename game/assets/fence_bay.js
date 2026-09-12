@@ -4,8 +4,8 @@ export default function (THREE) {
   const g = new THREE.Group();
   const WOOD = new THREE.MeshStandardMaterial({ color: 0x4A3728, roughness: 0.84, metalness: 0.0 });
   WOOD.name = 'timber';
-  const LIME = new THREE.MeshStandardMaterial({ color: 0xD4D4D4, roughness: 0.9, metalness: 0.0 });
-  LIME.name = 'plaster';
+  const LIME = new THREE.MeshStandardMaterial({ color: 0x5A4030, roughness: 0.88, metalness: 0.0 });
+  LIME.name = 'timber';
   const add = (geo, m, x, y, z) => {
     const mesh = new THREE.Mesh(geo, m);
     mesh.position.set(x, y, z);
