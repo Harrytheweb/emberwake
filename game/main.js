@@ -296,13 +296,6 @@ async function boot() {
   const rFar = makeRidgeMesh(1700, 110, 136, 10, 108, 0x8A9AAA, ridgeFn(2.6, 1.8), { lit: false });
   rFar.position.set(18, 22, -420);
   ridges.add(rNear, rMid, rFar);
-  for (let i = -2; i <= 2; i++) {
-    const p = peakProto.clone(true);
-    p.position.set(i * 86 + 4, 1.2, -190);
-    p.scale.set(0.42, 0.52 + Math.abs(i) * 0.06, 0.4);
-    p.rotation.y = i * 0.08;
-    ridges.add(p);
-  }
   scene.add(bakeStatic(ridges));
   scene.add(bakeStatic(placeCloudCards()));
 
