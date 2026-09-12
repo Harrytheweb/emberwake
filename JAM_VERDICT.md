@@ -23,3 +23,5 @@ outside folder  none, every file came from the game folder
 RESULT: PASS
 === END ===
 ```
+
+The pastoral look pass after this block is a `game/` change at the same play URL. Re-run the live gate once Pages has the new `main` sha.
